@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build:
+      context: .  # Use the current directory as the build context
+    ports:
+      - "8080:3000"  # Map container's 3000 to host's 8080
+    environment:
+      - NODE_ENV=production  # Set the environment to production
+    volumes:
+      - .env:/app/.env  # Only mount environment files if needed
+    command: ["node", "/app/.output/server/index.mjs"]  # Ensure correct execution
