@@ -65,11 +65,13 @@ export interface Category {
   active: boolean;
 }
 
-export interface Member {
-  name: string;
-  username: string;
-  role: "member" | "owner";
-  avatar: AvatarProps;
+export interface AuditLog {
+  id: number;
+  userId: number;
+  action: string;
+  ipAddress: string;
+  userAgent: string;
+  timestamp: string;
 }
 
 export interface Stat {

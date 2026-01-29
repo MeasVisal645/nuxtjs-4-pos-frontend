@@ -15,7 +15,7 @@ const links = [[{
 }, {
     label: 'Products',
     to: '/product',
-    icon: 'i-lucide-box',
+    icon: 'i-lucide-package-open',
     defaultOpen: false,
     type: 'trigger',
     children: [{
@@ -26,20 +26,8 @@ const links = [[{
         open.value = false
       }
     }, {
-      label: 'Add Product',
-      to: '/product/add',
-      onSelect: () => {
-        open.value = false
-      }
-    }, {
       label: 'Import Product',
       to: '/product/import',
-      onSelect: () => {
-        open.value = false
-      }
-    }, {
-      label: 'Promotion',
-      to: '/product/promotion',
       onSelect: () => {
         open.value = false
       }
@@ -70,7 +58,7 @@ const links = [[{
     }]
   }, {
   label: 'Categories',
-  icon: 'i-lucide-inbox',
+  icon: 'i-lucide-box',
   to: '/category',
   onSelect: () => {
       open.value = false
@@ -95,7 +83,15 @@ const links = [[{
     icon: 'i-lucide-cog',
     defaultOpen: false,
     type: 'trigger',
-    children: [{
+  children: [
+    {
+      label: 'Notification',
+      to: '/setting/notification',
+      exact: true,
+      onSelect: () => {
+        open.value = false
+      }
+    },{
       label: 'Add User',
       to: '/setting/add-user',
       exact: true,
@@ -111,6 +107,20 @@ const links = [[{
     }, {
       label: 'Import Product',
       to: '/product/import',
+      onSelect: () => {
+        open.value = false
+      }
+    }]
+  }, {
+    label: 'Admin',
+    to: '/admin',
+    icon: 'i-lucide-shield-user',
+    defaultOpen: false,
+    type: 'trigger',
+    children: [{
+      label: 'Audit Log',
+      to: '/admin/audit-log',
+      exact: true,
       onSelect: () => {
         open.value = false
       }

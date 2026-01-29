@@ -1,46 +1,23 @@
-import type { PageResponse, Product } from "~/types";
+import type { AuditLog, PageResponse } from "~/types";
 
-export function useProduct() {
+export function useAuditLog() {
   const config = useRuntimeConfig();
 
   const showModal = ref(false);
   const isEditOpen = ref(false);
   const modalMode = ref<"view" | "edit">("view");
 
-  const products = ref<Product[]>([]);
+  const auditLog = ref<AuditLog[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
   const selectedId = ref<string>("");
 
   const selectedItem = ref({
     id: null,
-    code: "" as string | undefined,
-    name: "" as string | undefined,
-    cost: "" as string | undefined,
-    price: "" as string | undefined,
-    quantity: "" as string | undefined,
-    unit: "" as string | undefined,
-    active: "" as string | undefined,
+    firstName: "" as string | undefined,
+    lastName: "" as string | undefined,
+    email: "" as string | undefined,
   });
-
-  /** ===========================
-   * Fetch All Product
-   * ========================== */
-  async function fetch() {
-    try {
-      pending.value = true;
-      loadError.value = null;
-      products.value = await useApi<Product[]>("/product/all");
-    } catch (e) {
-      loadError.value = e;
-      console.error("Fetch products failed:", e);
-      products.value = [];
-    } finally {
-      pending.value = false;
-    }
-  }
-
-  onMounted(fetch);
 
   /** ===========================
    * Fetch All Product Pagination
@@ -55,16 +32,16 @@ export function useProduct() {
       pending.value = true;
       loadError.value = null;
 
-      const res = await useApi<PageResponse<Product>>(
-        `/product?pageNumber=${pageNumber.value}`,
+      const res = await useApi<PageResponse<AuditLog>>(
+        `/admin/auditlog?pageNumber=${pageNumber.value}`,
       );
 
-      products.value = res.content;
+      auditLog.value = res.content;
       totalRecords.value = res.totalRecords;
       totalPages.value = res.totalPages;
     } catch (e) {
       loadError.value = e;
-      products.value = [];
+      auditLog.value = [];
     } finally {
       pending.value = false;
     }
@@ -78,20 +55,20 @@ export function useProduct() {
    * ========================== */
   return {
     // state
-    products,
+    auditLog,
     showModal,
     isEditOpen,
     modalMode,
     selectedId,
     selectedItem,
-    pageNumber,
-    pageSize,
-    totalRecords,
-    totalPages,
 
     // actions
     fetch,
     pending,
     loadError,
+    pageNumber,
+    pageSize,
+    totalPages,
+    totalRecords,
   };
 }

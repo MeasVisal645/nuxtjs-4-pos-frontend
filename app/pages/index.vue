@@ -4,7 +4,6 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Period, Range } from '~/types'
 
 const { isNotificationsSlideoverOpen } = useDashboard()
-const colorMode = useColorMode()
 
 const items = [[{
   label: 'New mail',
@@ -51,19 +50,15 @@ const period = ref<Period>('daily')
         </template>
       </UDashboardNavbar>
 
+      <!-- Nav bar -->
       <UDashboardToolbar>
         <template #left>
-          <div class="w-full h-full bg-blue-50">
-
-          </div>
         </template>
       </UDashboardToolbar>
     </template>
 
+    <!-- Body -->
     <template #body>
-      <div class="w-screen h-screen bg-red-50">
-
-      </div>
     </template>
   </UDashboardPanel>
 </template>
