@@ -26,7 +26,8 @@ const schema = z.object({
   quantity: z.coerce.number(),
   unit: z.enum(['PCS', 'SET', 'CASE', 'KG', 'BOTTLE', 'BOX']),
   categoryId: z.coerce.number(), 
-  brandId: z.coerce.number().optional()
+  brandId: z.coerce.number().optional(),
+  active:z.boolean()
 })
 
 async function loadSelects() {
@@ -44,6 +45,7 @@ onMounted(() => {
 })
 
 const fields = computed(() => [
+  { name: 'id', label: 'Id', type: 'text' as const, required: true, hidden: true },
   { name: 'code', label: 'Product Code', type: 'text' as const, required: true },
   { name: 'name', label: 'Product Name', type: 'text' as const, required: true },
   { name: 'cost', label: 'Cost', type: 'number' as const, required: true },
@@ -51,7 +53,11 @@ const fields = computed(() => [
   { name: 'quantity', label: 'Quantity', type: 'number' as const, required: true },
   { name: 'unit', label: 'Unit', type: 'select' as const, required: true , items: unit},
   { name: 'categoryId', label: 'Category', type: 'select' as const, required: true, items: categoryItems.value },
-  { name: 'brandId', label: 'Brand', type: 'select' as const, required: false, items: brandItems.value }
+  { name: 'brandId', label: 'Brand', type: 'select' as const, required: false, items: brandItems.value },
+  {
+    name: 'active', label: 'Active', type: 'select' as const, require: true,
+    items: [{ label: 'Active', value: true }, { label: 'Inactive', value: false }]
+  }
 ])
 
 const unit = [

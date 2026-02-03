@@ -68,26 +68,44 @@ export interface Category {
 export interface AuditLog {
   id: number;
   userId: number;
-  action: string;
+  method: string;
+  path: string;
+  param: string;
   ipAddress: string;
   userAgent: string;
   timestamp: string;
 }
 
-export interface Stat {
-  title: string;
-  icon: string;
-  value: number | string;
-  variation: number;
-  formatter?: (value: number) => string;
+export interface QuantityAdjustment {
+  productName: string;
+  userId: string;
+  method: string;
+  quantity: number;
+  complete: boolean;
+  createdDate: string;
 }
 
-export interface Sale {
+export interface Supplier {
   id: string;
-  date: string;
-  status: SaleStatus;
+  name: string;
+  contact: string;
+  phone: string;
+  address: string;
+  active: boolean;
+  createdDate: string;
+}
+
+export interface SupplierContact {
+  name: string;
   email: string;
-  amount: number;
+  phone: string;
+  position: string;
+  active: boolean;
+}
+
+export interface SupplierWithContacts {
+  supplier: Supplier;
+  supplierContact: SupplierContact[];
 }
 
 export interface Notification {

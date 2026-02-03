@@ -135,9 +135,22 @@ function searchByCode() {
 // ---------- Validation ----------
 function rowError(it: AdjustmentItem): string | null {
   const qty = Number(it.qty)
-  if (!Number.isFinite(qty) || qty <= 0) return 'Qty must be > 0'
+
+  if (!Number.isFinite(qty)) {
+    return 'Quantity is invalid'
+  }
+
+  if (it.method === 'ADD') {
+    if (qty <= 0) return 'Qty must be > 0'
+  }
+
+  if (it.method === 'SUBTRACT') {
+    if (qty < 0) return 'Qty must be ≥ 0'
+  }
+
   return null
 }
+
 
 const canSubmit = computed(() => {
   if (items.value.length === 0) return false
@@ -155,12 +168,9 @@ async function submitAdjustments() {
 
     await Promise.all(
       items.value.map(item => {
-        const addQuantity =
-          item.method === 'ADD' ? Number(item.qty) : -Number(item.qty)
-
         return useApi(`/product/add-quantity/${encodeURIComponent(item.id)}`, {
           method: 'PUT',
-          body: { addQuantity }
+          body: { method: item.method, addQuantity: Number(item.qty) }
         })
       })
     )
@@ -190,8 +200,6 @@ async function submitAdjustments() {
         <template #right />
       </UDashboardNavbar>
     </template>
-
-
       
     <template #body>
       <div class="relative justify-between">

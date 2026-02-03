@@ -2,23 +2,22 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { Category } from '~/types'
+import type { Supplier } from '~/types'
 
 const {
-  fetch,
   loadError,
-  categories,
+  suppliers,
   pending,
   pageNumber,
   pageSize,
   totalRecords,
   totalPages
-} = useCategory()
+} = useSupplier()
 
 const toast = useToast()
 
 
-const selectedCategory = ref<Category | null>(null)
+const selectedSupplier = ref<Supplier | null>(null)
 const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
@@ -41,7 +40,7 @@ const pagination = ref({
   pageSize: 10
 })
 
-function getRowItems(row: Row<Category>) {
+function getRowItems(row: Row<Supplier>) {
   return [
     {
       type: 'label',
@@ -54,7 +53,7 @@ function getRowItems(row: Row<Category>) {
       label: 'View Product Details',
       icon: 'i-lucide-list',
       onSelect() {
-        selectedCategory.value = row.original
+        selectedSupplier.value = row.original
         viewModalOpen.value = true     
       }
     },
@@ -86,7 +85,7 @@ function getRowItems(row: Row<Category>) {
   ]
 }
 
-const columns: TableColumn<Category>[] = [
+const columns: TableColumn<Supplier>[] = [
   {
     id: 'select',
     header: ({ table }) =>
@@ -114,8 +113,13 @@ const columns: TableColumn<Category>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { accessorKey: 'code', header: 'Code' },
   { accessorKey: 'name', header: 'Name' },
+  { accessorKey: 'contact', header: 'Contact' },
+  { accessorKey: 'phone', header: 'Phone' },
+  { accessorKey: 'address', header: 'Address' },
+  {
+    accessorKey: 'supplierContact', header: 'Details'
+  },
   {
     accessorKey: 'active',
     header: 'Active',
@@ -175,36 +179,30 @@ watch(filter, (newVal) => {
   const col = api.getColumn('active')
   if (!col) return
 
-  if (newVal === 'all') {
-    col.setFilterValue(undefined)
-  } else if (newVal === 'true') {
-    col.setFilterValue(true)
-  } else if (newVal === 'false') {
-    col.setFilterValue(false)
-  }
+  if (newVal === 'all') col.setFilterValue(undefined)
+  else col.setFilterValue(newVal === 'true')
 })
 
-
-const code = computed({
+const search = computed({
   get: (): string => {
-    return (table.value?.tableApi?.getColumn('code')?.getFilterValue() as string) || ''
+    return (table.value?.tableApi?.getColumn('name')?.getFilterValue() as string) || ''
   },
   set: (value: string) => {
-    table.value?.tableApi?.getColumn('code')?.setFilterValue(value || undefined)
+    table.value?.tableApi?.getColumn('name')?.setFilterValue(value || undefined)
   }
 })
 </script>
 
 <template>
-  <UDashboardPanel id="category">
+  <UDashboardPanel id="supplier">
     <template #header>
-      <UDashboardNavbar title="List Category">
+      <UDashboardNavbar title="List Supplier">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
 
         <template #right>
-          <CategoryAddModal @submitted="fetch" />
+          <SupplierAddModal/>
         </template>
       </UDashboardNavbar>
     </template>
@@ -221,10 +219,10 @@ const code = computed({
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <div class="flex flex-wrap items-center gap-1.5">
           <UInput
-            v-model="code"
+            v-model="search"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Filter Product Code..."
+            placeholder="Filter Supplier Name..."
           />
         </div>
         <div class="gap-2 flex">
@@ -271,7 +269,7 @@ const code = computed({
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
-        :data="categories"
+        :data="suppliers"
         :columns="columns"
         :loading="pending"
         :ui="{
@@ -284,11 +282,11 @@ const code = computed({
         }"
       />
 
-      <CategoryEditModal
+      <SupplierEditModal
         v-model:open="editModalOpen"
         :id="selectedId"
-        @submitted="fetch"
       />
+
 
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">

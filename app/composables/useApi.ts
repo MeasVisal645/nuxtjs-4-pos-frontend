@@ -2,8 +2,9 @@ export const useApi = async <T = any>(
   path: string,
   opts: any = {},
 ): Promise<T> => {
+  const config = useRuntimeConfig();
   const token = useCookie<string | null>("token", { default: () => null });
-  const baseURL = "http://localhost:8081/api/v1";
+  const baseURL = `${config.public.apiBaseUrl}/api/v1`;
   const state = useState("globalSessionExpired", () => ({ show: true }));
 
   const authHeader = token.value

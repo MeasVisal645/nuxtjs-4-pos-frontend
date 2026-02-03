@@ -2,26 +2,16 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { Category } from '~/types'
+import type { QuantityAdjustment } from '~/types'
 
 const {
-  fetch,
   loadError,
-  categories,
+  quantityAdjustment,
   pending,
   pageNumber,
   pageSize,
   totalRecords,
-  totalPages
-} = useCategory()
-
-const toast = useToast()
-
-
-const selectedCategory = ref<Category | null>(null)
-const viewModalOpen = ref(false)
-const editModalOpen = ref(false)
-const selectedId = ref<string | number | null>(null)
+} = useQuantityAdjustment()
 
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
@@ -32,7 +22,7 @@ const table = useTemplateRef('table')
 
 const columnFilters = ref<any[]>([])
 const columnVisibility = ref<Record<string, boolean>>({
-  active: false
+  complete: false
 })
 const rowSelection = ref<Record<string, boolean>>({})
 
@@ -41,52 +31,7 @@ const pagination = ref({
   pageSize: 10
 })
 
-function getRowItems(row: Row<Category>) {
-  return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'View Product Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedCategory.value = row.original
-        viewModalOpen.value = true     
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Edit Product',
-      icon: 'i-lucide-pencil',
-      onSelect() {
-        selectedId.value = row.original.id
-        editModalOpen.value = true
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Delete Product',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        toast.add({
-          title: 'Product deleted',
-          description: 'The product has been deleted.'
-        })
-      }
-    }
-  ]
-}
-
-const columns: TableColumn<Category>[] = [
+const columns: TableColumn<QuantityAdjustment>[] = [
   {
     id: 'select',
     header: ({ table }) =>
@@ -114,97 +59,86 @@ const columns: TableColumn<Category>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { accessorKey: 'code', header: 'Code' },
-  { accessorKey: 'name', header: 'Name' },
+  { accessorKey: 'productName', header: 'Product' },
+  { accessorKey: 'userId', header: 'User Id' },
   {
-    accessorKey: 'active',
-    header: 'Active',
+    accessorKey: 'method',
+    header: 'Method',
     cell: ({ row }) =>
       h(
         UBadge,
         {
-          color: row.original.active ? 'success' : 'error',
+          color: row.original.method === 'ADD' ? 'warning' : row.original.method === 'SUBTRACT' ? 'error' : 'warning',
           variant: 'soft',
-          ui: { rounded: 'rounded-full' }
+          ui: { rounded: 'rounded-full', font: 'font-medium' }
         },
-        () => (row.original.active ? 'Active' : 'Inactive')
+        () => (row.original.method)
       )
   },
   {
-    id: 'actions',
-    cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
-        )
+    accessorKey: 'quantity',
+    header: 'Quantity',
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: row.original.quantity >= 10 ? 'success' : 'error',
+          variant: 'soft',
+          ui: { rounded: 'rounded-full', font: 'font-medium' }
+        },
+        () => (row.original.quantity)
       )
+   },
+  {
+    accessorKey: 'complete',
+    header: 'Complete',
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: row.original.complete ? 'success' : 'error',
+          variant: 'soft',
+          ui: { rounded: 'rounded-full' }
+        },
+        () => (row.original.complete ? 'Yes' : 'No')
+      )
+  },
+  {
+    accessorKey: 'createdDate',
+    header: 'Created Date',
+    cell: ({ row }) => {
+      const d = new Date(row.original.createdDate)
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
     }
-  }
+  },
 ]
 
-const filter = ref< 'true' | 'false' | 'all'>('true')
+// Search Filter
+const globalFilter = ref('')
+const globalFilterFn = (row: any, _columnId: string, filterValue: string) => {
+  const q = String(filterValue ?? '').toLowerCase().trim()
+  if (!q) return true
 
-watch(
-  () => table.value?.tableApi,
-  (api) => {
-    if (!api) return
-    api.getColumn('active')?.setFilterValue(true)
-  },
-  { immediate: true }
-)
+  const createdDate = String(row.original.createdDate ?? '').toLowerCase()
+  const productName = String(row.original.name ?? '').toLowerCase()
 
-watch(filter, (newVal) => {
-  const api = table.value?.tableApi
-  if (!api) return
+  return productName.includes(q) || createdDate.includes(q)
+}
 
-  const col = api.getColumn('active')
-  if (!col) return
-
-  if (newVal === 'all') {
-    col.setFilterValue(undefined)
-  } else if (newVal === 'true') {
-    col.setFilterValue(true)
-  } else if (newVal === 'false') {
-    col.setFilterValue(false)
-  }
-})
-
-
-const code = computed({
-  get: (): string => {
-    return (table.value?.tableApi?.getColumn('code')?.getFilterValue() as string) || ''
-  },
-  set: (value: string) => {
-    table.value?.tableApi?.getColumn('code')?.setFilterValue(value || undefined)
-  }
+watch(globalFilter, (value) => {
+  table.value?.tableApi?.setGlobalFilter(value)
 })
 </script>
 
 <template>
-  <UDashboardPanel id="category">
+  <UDashboardPanel id="quantityAdjustment">
     <template #header>
-      <UDashboardNavbar title="List Category">
+      <UDashboardNavbar title="Quantity Adjustment">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
 
         <template #right>
-          <CategoryAddModal @submitted="fetch" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -213,7 +147,7 @@ const code = computed({
       <div v-if="loadError" class="mb-3">
         <UAlert
           color="error"
-          title="Failed to load products"
+          title="Failed to load audit logs"
           :description="loadError?.data?.message || loadError?.message || 'Unknown error'"
         />
       </div>
@@ -221,24 +155,13 @@ const code = computed({
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
         <div class="flex flex-wrap items-center gap-1.5">
           <UInput
-            v-model="code"
+            v-model="globalFilter"
             class="max-w-sm"
             icon="i-lucide-search"
             placeholder="Filter Product Code..."
           />
         </div>
         <div class="gap-2 flex">
-          <USelect
-            v-model="filter"
-            :items="[
-              { label: 'All', value: 'all' },
-              { label: 'Active', value: 'true' },
-              { label: 'Inactive', value: 'false' }
-            ]"
-            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="Filter status"
-            class="min-w-28"
-          />
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -265,13 +188,15 @@ const code = computed({
 
       <UTable
         ref="table"
+        v-model:global-filter="globalFilter"
+        :global-filter-fn="globalFilterFn"
         v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
         v-model:row-selection="rowSelection"
         v-model:pagination="pagination"
         :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
-        :data="categories"
+        :data="quantityAdjustment"
         :columns="columns"
         :loading="pending"
         :ui="{
@@ -283,13 +208,6 @@ const code = computed({
           separator: 'h-0'
         }"
       />
-
-      <CategoryEditModal
-        v-model:open="editModalOpen"
-        :id="selectedId"
-        @submitted="fetch"
-      />
-
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">

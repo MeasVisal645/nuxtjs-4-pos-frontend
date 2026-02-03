@@ -141,7 +141,7 @@ const groups = computed(() => [{
     id: 'source',
     label: 'View page source',
     icon: 'i-simple-icons-github',
-    to: `https://github.com/nuxt-ui-templates/dashboard/blob/main/app/pages${route.path === '/' ? '/index' : route.path}.vue`,
+    to: `https://github.com/MeasVisal645/nuxtjs-4-pos-frontend`,
     target: '_blank'
   }]
 }])

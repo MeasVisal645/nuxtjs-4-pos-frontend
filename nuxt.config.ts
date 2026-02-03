@@ -22,8 +22,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBaseUrl:
-        process.env.NUXT_PUBLIC_API_BASE_URL || "http://localhost:8081",
+      // apiBaseUrl: process.env.PROD_API_BASE_URL,
+      apiBaseUrl: process.env.DEV_API_BASE_URL,
     },
     googleFonts: {
       families: {

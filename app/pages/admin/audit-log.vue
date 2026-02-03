@@ -20,6 +20,7 @@ const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
 
+const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
@@ -28,7 +29,7 @@ const table = useTemplateRef('table')
 
 const columnFilters = ref<any[]>([])
 const columnVisibility = ref<Record<string, boolean>>({
-  active: false
+  userAgent: false
 })
 const rowSelection = ref<Record<string, boolean>>({})
 
@@ -110,11 +111,45 @@ const columns: TableColumn<AuditLog>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { accessorKey: 'userId', header: 'User Id' },
-  { accessorKey: 'action', header: 'Action' },
+  { accessorKey: 'userId', header: 'User' },
+  {
+    accessorKey: 'method',
+    header: 'Method',
+    cell: ({ row }) => {
+      const colorMap: Record<string, string> = {
+        GET: 'success',
+        POST: 'warning',
+        PUT: 'secondary',
+        DELETE: 'error' // 👈 added
+      }
+
+      return h(
+        UBadge,
+        {
+          color: colorMap[row.original.method] || 'neutral',
+          variant: 'soft',
+          ui: {
+            rounded: 'rounded-full',
+            font: 'font-medium'
+          }
+        },
+        () => row.original.method
+      )
+    }
+  },
+  { accessorKey: 'path', header: 'Path' },
+  { accessorKey: 'param', header: 'Param' },
   { accessorKey: 'ipAddress', header: 'Ip Address' },
   { accessorKey: 'userAgent', header: 'User Agent' },
-  { accessorKey: 'timestamp', header: 'Time Stamp' },
+  {
+    accessorKey: 'timestamp',
+    header: 'Date (dd/mm/yyyy)',
+    cell: ({ row }) => {
+      const d = new Date(row.original.timestamp)
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
+    }
+  }
+
 ]
 
 // Search Filter

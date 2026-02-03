@@ -16,6 +16,7 @@ const {
 } = useProduct()
 
 const toast = useToast()
+const UBadge = resolveComponent('UBadge')
 
 const selectedProduct = ref<Product | null>(null)
 const viewModalOpen = ref(false)
@@ -115,18 +116,34 @@ const columns: TableColumn<Product>[] = [
   { accessorKey: 'code', header: 'Code' },
   { accessorKey: 'name', header: 'Name' },
   { accessorKey: 'price', header: 'Price' },
-  { accessorKey: 'quantity', header: 'Quantity' },
+  {
+    accessorKey: 'quantity',
+    header: 'Quantity',
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: row.original.quantity >= 10 ? 'success' : 'error',
+          variant: 'soft',
+          ui: { rounded: 'rounded-full', font: 'font-medium' }
+        },
+        () => (row.original.quantity)
+      )
+  },
   { accessorKey: 'unit', header: 'Unit' },
   {
     accessorKey: 'active',
     header: 'Active',
-    filterFn: (row, columnId, filterValue) =>
-      row.getValue(columnId) === filterValue,
-    enableHiding: true,
-    cell: ({ row }) => {
-      const value = row.original.active
-      return value ? 'Active' : 'Inactive'
-    }
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: row.original.active ? 'success' : 'error',
+          variant: 'soft',
+          ui: { rounded: 'rounded-full' }
+        },
+        () => (row.original.active ? 'Active' : 'Inactive')
+      )
   },
   {
     id: 'actions',

@@ -18,6 +18,8 @@ const toast = useToast()
 const selectedEmployee = ref<Employee | null>(null)
 const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
+const addUserModalOpen = ref(false)
+
 const selectedId = ref<string | number | null>(null)
 
 const UButton = resolveComponent('UButton')
@@ -63,6 +65,17 @@ function getRowItems(row: Row<Employee>) {
       onSelect() {
         selectedId.value = row.original.id
         editModalOpen.value = true
+      }
+    },
+    {
+      type: 'separator'
+    },
+    {
+      label: 'Create User Login',
+      icon: 'i-lucide-pencil',
+      onSelect() {
+        selectedId.value = row.original.id
+        addUserModalOpen.value = true
       }
     },
     {
@@ -164,9 +177,15 @@ watch(filter, (newVal) => {
   const col = api.getColumn('active')
   if (!col) return
 
-  if (newVal === 'all') col.setFilterValue(undefined)
-  else col.setFilterValue(newVal === 'true')
+  if (newVal === 'all') {
+    col.setFilterValue(undefined)
+  } else if (newVal === 'true') {
+    col.setFilterValue(true)
+  } else if (newVal === 'false') {
+    col.setFilterValue(false)
+  }
 })
+
 
 // Search Filter
 const globalFilter = ref('')
@@ -280,6 +299,12 @@ watch(globalFilter, (value) => {
 
       <EmployeeEditModal
         v-model:open="editModalOpen"
+        :id="selectedId"
+        @submitted="fetch"
+      />
+
+      <EmployeeAddUserModal 
+        v-model:open="addUserModalOpen"
         :id="selectedId"
         @submitted="fetch"
       />

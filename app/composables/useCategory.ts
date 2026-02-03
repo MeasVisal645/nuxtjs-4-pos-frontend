@@ -29,7 +29,7 @@ export function useCategory() {
       categories.value = await useApi<Category[]>("/category/all");
     } catch (e) {
       loadError.value = e;
-      console.error("Fetch products failed:", e);
+      console.error("Fetch category failed:", e);
       categories.value = [];
     } finally {
       pending.value = false;

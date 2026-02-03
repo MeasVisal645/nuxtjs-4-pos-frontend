@@ -1,23 +1,9 @@
 import type { AuditLog, PageResponse } from "~/types";
 
 export function useAuditLog() {
-  const config = useRuntimeConfig();
-
-  const showModal = ref(false);
-  const isEditOpen = ref(false);
-  const modalMode = ref<"view" | "edit">("view");
-
   const auditLog = ref<AuditLog[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
-  const selectedId = ref<string>("");
-
-  const selectedItem = ref({
-    id: null,
-    firstName: "" as string | undefined,
-    lastName: "" as string | undefined,
-    email: "" as string | undefined,
-  });
 
   /** ===========================
    * Fetch All Product Pagination
@@ -56,11 +42,6 @@ export function useAuditLog() {
   return {
     // state
     auditLog,
-    showModal,
-    isEditOpen,
-    modalMode,
-    selectedId,
-    selectedItem,
 
     // actions
     fetch,

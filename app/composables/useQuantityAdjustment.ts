@@ -1,13 +1,13 @@
-import type { Employee } from "~/types";
+import type { PageResponse, QuantityAdjustment } from "~/types";
 
-export function useEmployee() {
+export function useQuantityAdjustment() {
   const config = useRuntimeConfig();
 
   const showModal = ref(false);
   const isEditOpen = ref(false);
   const modalMode = ref<"view" | "edit">("view");
 
-  const employees = ref<Employee[]>([]);
+  const quantityAdjustment = ref<QuantityAdjustment[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
   const selectedId = ref<string>("");
@@ -20,30 +20,42 @@ export function useEmployee() {
   });
 
   /** ===========================
-   * Fetch All Policies
+   * Fetch All Product Pagination
    * ========================== */
-  async function fetch() {
+  const pageNumber = ref(1);
+  const pageSize = ref(10);
+  const totalRecords = ref(0);
+  const totalPages = ref(0);
+
+  async function fetchPagination() {
     try {
       pending.value = true;
       loadError.value = null;
-      employees.value = await useApi<Employee[]>("/employee/all");
+
+      const res = await useApi<PageResponse<QuantityAdjustment>>(
+        `/quantityAdjustment?pageNumber=${pageNumber.value}`,
+      );
+
+      quantityAdjustment.value = res.content;
+      totalRecords.value = res.totalRecords;
+      totalPages.value = res.totalPages;
     } catch (e) {
       loadError.value = e;
-      console.error("Fetch employees failed:", e);
-      employees.value = [];
+      quantityAdjustment.value = [];
     } finally {
       pending.value = false;
     }
   }
 
-  onMounted(fetch);
+  onMounted(fetchPagination);
+  watch([pageNumber, pageSize], fetchPagination);
 
   /** ===========================
    * RETURN EVERYTHING
    * ========================== */
   return {
     // state
-    employees,
+    quantityAdjustment,
     showModal,
     isEditOpen,
     modalMode,
@@ -54,5 +66,9 @@ export function useEmployee() {
     fetch,
     pending,
     loadError,
+    pageNumber,
+    pageSize,
+    totalPages,
+    totalRecords,
   };
 }
