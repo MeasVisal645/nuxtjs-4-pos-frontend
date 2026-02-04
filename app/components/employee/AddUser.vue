@@ -21,26 +21,20 @@ const fields = [
   { name: 'password', label: 'Password', type: 'text' as const, required: true }
 ]
 
-const transform = (data: Record<string, any>) => {
-  if (props.id == null) {
-    return data
-  }
-  return {
-    ...data,
-    employeeId: Number(props.id)
-  }
-}
+const transform = (data: Record<string, any>) => ({
+  ...data,
+  employeeId: props.id == null ? undefined : Number(props.id)
+})
 </script>
 
 <template>
   <FormModal
     :open="open"
-    :id="id"
     @update:open="(v) => emit('update:open', v)"
-    mode="update"
+    mode="create"
     title="Create User"
     description="create user login"
-    buttonLabel=""
+    buttonLabel="Create"
     :schema="schema"
     :fields="fields"
     createUrl="/auth/signup"

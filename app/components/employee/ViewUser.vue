@@ -17,7 +17,13 @@ const emit = defineEmits<{
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const editModalOpen = ref(false)
+const addModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
+
+function openAddUser() {
+  selectedId.value = props.data?.employee?.id ?? null
+  addModalOpen.value = true
+}
 
 const firstName = computed(() => props.data?.employee?.firstName ?? '')
 const lastName = computed(() => props.data?.employee?.lastName ?? '')
@@ -90,7 +96,7 @@ const columns: TableColumn<User>[] = [
     @update:open="(v) => emit('update:open', v)"
   >
     <template #header>
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center justify-between w-full">
         <div>
           <div class="font-semibold">Employee Details</div>
           <div class="text-sm text-muted" v-if="firstName || lastName">
@@ -98,7 +104,11 @@ const columns: TableColumn<User>[] = [
           </div>
         </div>
 
-        <!-- <UButton icon="i-lucide-x" variant="ghost" color="neutral" @click="emit('update:open', false)" /> -->
+        <EmployeeAddUser
+          v-model:open="addModalOpen"
+          :id="props.data?.employee?.id ?? null"
+          @submitted="() => emit('submitted')"
+        />
       </div>
     </template>
 
