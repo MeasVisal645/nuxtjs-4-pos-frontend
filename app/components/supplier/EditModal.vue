@@ -21,7 +21,7 @@ const schema = z.object({
 })
 
 const fields = [
-  { name: 'id', label: "Id", type: 'number' as const, require: true, hidden: false},
+  { name: 'id', label: "Id", type: 'number' as const, require: true, hidden: true},
   { name: 'name', label: 'Name', type: 'text' as const, required: true },
   { name: 'contact', label: 'Contact', type: 'text' as const, required: true },
   { name: 'phone', label: 'Phone', type: 'text' as const, required: true },

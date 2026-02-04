@@ -1,8 +1,6 @@
 import type { PageResponse, Product } from "~/types";
 
 export function useProduct() {
-  const config = useRuntimeConfig();
-
   const showModal = ref(false);
   const isEditOpen = ref(false);
   const modalMode = ref<"view" | "edit">("view");
@@ -22,25 +20,6 @@ export function useProduct() {
     unit: "" as string | undefined,
     active: "" as string | undefined,
   });
-
-  /** ===========================
-   * Fetch All Product
-   * ========================== */
-  async function fetch() {
-    try {
-      pending.value = true;
-      loadError.value = null;
-      products.value = await useApi<Product[]>("/product/all");
-    } catch (e) {
-      loadError.value = e;
-      console.error("Fetch products failed:", e);
-      products.value = [];
-    } finally {
-      pending.value = false;
-    }
-  }
-
-  onMounted(fetch);
 
   /** ===========================
    * Fetch All Product Pagination
@@ -78,6 +57,7 @@ export function useProduct() {
    * ========================== */
   return {
     // state
+    fetchPagination,
     products,
     showModal,
     isEditOpen,
@@ -90,7 +70,6 @@ export function useProduct() {
     totalPages,
 
     // actions
-    fetch,
     pending,
     loadError,
   };

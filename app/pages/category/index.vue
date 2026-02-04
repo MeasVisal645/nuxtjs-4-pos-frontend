@@ -5,7 +5,7 @@ import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { Category } from '~/types'
 
 const {
-  fetch,
+  fetchPagination,
   loadError,
   categories,
   pending,
@@ -204,7 +204,7 @@ const code = computed({
         </template>
 
         <template #right>
-          <CategoryAddModal @submitted="fetch" />
+          <CategoryAddModal @submitted="fetchPagination" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -287,9 +287,8 @@ const code = computed({
       <CategoryEditModal
         v-model:open="editModalOpen"
         :id="selectedId"
-        @submitted="fetch"
+        @submitted="fetchPagination"
       />
-
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">

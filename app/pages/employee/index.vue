@@ -2,26 +2,31 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { Employee } from '~/types'
+import type { Employee, EmployeeUser } from '~/types'
 
 const {
-  fetch,
+  fetchPagination,
   loadError,
   employees,
   pending,
-  showModal,
+  pageNumber,
+  pageSize,
+  totalRecords,
+  totalPages,
+  modalOpen,
+  selected,
+  openModal
 } = useEmployee()
 
 const toast = useToast()
-
 
 const selectedEmployee = ref<Employee | null>(null)
 const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
 const addUserModalOpen = ref(false)
-
 const selectedId = ref<string | number | null>(null)
 
+const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
@@ -39,7 +44,7 @@ const pagination = ref({
   pageSize: 10
 })
 
-function getRowItems(row: Row<Employee>) {
+function getRowItems(row: Row<EmployeeUser>) {
   return [
     {
       type: 'label',
@@ -49,21 +54,10 @@ function getRowItems(row: Row<Employee>) {
       type: 'separator'
     },
     {
-      label: 'View Employee Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedEmployee.value = row.original
-        viewModalOpen.value = true     
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
       label: 'Edit Employee',
       icon: 'i-lucide-pencil',
       onSelect() {
-        selectedId.value = row.original.id
+        selectedId.value = row.original.employee.id
         editModalOpen.value = true
       }
     },
@@ -74,7 +68,7 @@ function getRowItems(row: Row<Employee>) {
       label: 'Create User Login',
       icon: 'i-lucide-pencil',
       onSelect() {
-        selectedId.value = row.original.id
+        selectedId.value = row.original.employee.id
         addUserModalOpen.value = true
       }
     },
@@ -95,7 +89,7 @@ function getRowItems(row: Row<Employee>) {
   ]
 }
 
-const columns: TableColumn<Employee>[] = [
+const columns: TableColumn<EmployeeUser>[] = [
   {
     id: 'select',
     header: ({ table }) =>
@@ -114,7 +108,7 @@ const columns: TableColumn<Employee>[] = [
         ariaLabel: 'Select row'
       })
   },
-  {
+    {
     id: 'no',
     header: 'No',
     cell: ({ row, table }) => {
@@ -123,27 +117,48 @@ const columns: TableColumn<Employee>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { accessorKey: 'firstName', header: 'Firstname' },
-  { accessorKey: 'lastName', header: 'Lastname' },
-  { accessorKey: 'email', header: 'Email' },
+  { id: 'firstName', header: 'firstName', accessorFn: (r) => r.employee.firstName ?? '' },
+  { id: 'lastName', header: 'lastName', accessorFn: (r) => r.employee.lastName ?? '' },
+  { id: 'email', header: 'Email', accessorFn: (r) => r.employee.email ?? '' },
   {
-    accessorKey: 'active',
+    id: 'details',
+    header: 'Details',
+    cell: ({ row }) => {
+      const count = row.original.employee
+      return h(UButton, {
+        label: `View`,
+        size: 'xs',
+        color: 'primary',
+        variant: 'soft',
+        onClick: () => openModal(row.original)
+      })
+    }
+  },
+  {
+    id: 'active',
     header: 'Active',
-    filterFn: (row, columnId, filterValue) => row.getValue(columnId) === filterValue,
-    enableHiding: true
+    accessorFn: (r) => r.employee.active,
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: row.original.employee.active ? 'success' : 'error',
+          variant: 'soft',
+          ui: { rounded: 'rounded-full' }
+        },
+        () => (row.original.employee.active ? 'Active' : 'Inactive')
+      )
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      return h(
+    cell: ({ row }) =>
+      h(
         'div',
         { class: 'text-right' },
         h(
           UDropdownMenu,
           {
-            content: {
-              align: 'end'
-            },
+            content: { align: 'end' },
             items: getRowItems(row)
           },
           () =>
@@ -155,7 +170,6 @@ const columns: TableColumn<Employee>[] = [
             })
         )
       )
-    }
   }
 ]
 
@@ -215,7 +229,7 @@ watch(globalFilter, (value) => {
         </template>
 
         <template #right>
-          <EmployeeAddModal @submitted="fetch" />
+          <EmployeeAddModal @submitted="fetchPagination" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -300,27 +314,32 @@ watch(globalFilter, (value) => {
       <EmployeeEditModal
         v-model:open="editModalOpen"
         :id="selectedId"
-        @submitted="fetch"
+        @submitted="fetchPagination"
       />
 
       <EmployeeAddUserModal 
         v-model:open="addUserModalOpen"
         :id="selectedId"
-        @submitted="fetch"
+        @submitted="fetchPagination"
       />
 
+      <EmployeeViewUser 
+        v-model:open="modalOpen"
+        :data="selected"
+        @submitted="fetchPagination"
+      />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
           {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
+          {{ totalRecords }} row(s) selected.
         </div>
 
         <UPagination
-          :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-          :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-          :total="table?.tableApi?.getFilteredRowModel().rows.length"
-          @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
+          :default-page="pageNumber"
+          :items-per-page="pageSize"
+          :total="totalRecords"
+          @update:page="(p:number) => (pageNumber = p)"
         />
       </div>
     </template>

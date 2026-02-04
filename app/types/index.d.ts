@@ -18,6 +18,19 @@ export interface Policy {
   items: any[];
 }
 
+export interface items {
+  id?: number;
+  policyNo: string;
+  inceptionDate: string;
+  expiredDate: string;
+  issueDate: string;
+  insuredName: string;
+  cardNo: string;
+  dob: string;
+  gender: string;
+  remark: string;
+}
+
 export interface Product {
   id: number;
   code: string;
@@ -37,17 +50,16 @@ export interface Employee {
   active: boolean;
 }
 
-export interface items {
-  id?: number;
-  policyNo: string;
-  inceptionDate: string;
-  expiredDate: string;
-  issueDate: string;
-  insuredName: string;
-  cardNo: string;
-  dob: string;
-  gender: string;
-  remark: string;
+export interface User {
+  id: number;
+  username: string;
+  password: string;
+  role: string;
+}
+
+export interface EmployeeUser {
+  employee: Employee;
+  user: User[];
 }
 
 export type PageResponse<T> = {
@@ -96,6 +108,7 @@ export interface Supplier {
 }
 
 export interface SupplierContact {
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -105,7 +118,7 @@ export interface SupplierContact {
 
 export interface SupplierWithContacts {
   supplier: Supplier;
-  supplierContact: SupplierContact[];
+  supplierContacts: SupplierContact[];
 }
 
 export interface Notification {

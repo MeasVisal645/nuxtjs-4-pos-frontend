@@ -5,7 +5,7 @@ import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { Product } from '~/types'
 
 const {
-  fetch,
+  fetchPagination,
   loadError,
   products,
   pending,
@@ -219,7 +219,7 @@ watch(globalFilter, (value) => {
         </template>
 
         <template #right>
-          <ProductAddModal @submitted="fetch" />
+          <ProductAddModal @submitted="fetchPagination" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -304,7 +304,7 @@ watch(globalFilter, (value) => {
       <ProductEditModal
         v-model:open="editModalOpen"
         :id="selectedId"
-        @submitted="fetch"
+        @submitted="fetchPagination"
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">

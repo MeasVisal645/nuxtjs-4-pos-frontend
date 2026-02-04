@@ -1,8 +1,6 @@
 import type { PageResponse, Category } from "~/types";
 
 export function useCategory() {
-  const config = useRuntimeConfig();
-
   const showModal = ref(false);
   const isEditOpen = ref(false);
   const modalMode = ref<"view" | "edit">("view");
@@ -18,25 +16,6 @@ export function useCategory() {
     name: "" as string | undefined,
     active: "" as string | undefined,
   });
-
-  /** ===========================
-   * Fetch All Product
-   * ========================== */
-  async function fetch() {
-    try {
-      pending.value = true;
-      loadError.value = null;
-      categories.value = await useApi<Category[]>("/category/all");
-    } catch (e) {
-      loadError.value = e;
-      console.error("Fetch category failed:", e);
-      categories.value = [];
-    } finally {
-      pending.value = false;
-    }
-  }
-
-  onMounted(fetch);
 
   /** ===========================
    * Fetch All Product Pagination
@@ -96,7 +75,7 @@ export function useCategory() {
     totalPages,
 
     // actions
-    fetch,
+    fetchPagination,
     viewById,
     pending,
     loadError,

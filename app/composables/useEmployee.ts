@@ -1,58 +1,80 @@
-import type { Employee } from "~/types";
+import type { PageResponse, EmployeeUser } from "~/types";
 
 export function useEmployee() {
-  const config = useRuntimeConfig();
-
-  const showModal = ref(false);
-  const isEditOpen = ref(false);
-  const modalMode = ref<"view" | "edit">("view");
-
-  const employees = ref<Employee[]>([]);
+  const employees = ref<EmployeeUser[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
-  const selectedId = ref<string>("");
 
-  const selectedItem = ref({
-    id: null,
-    firstName: "" as string | undefined,
-    lastName: "" as string | undefined,
-    email: "" as string | undefined,
-  });
+  const pageNumber = ref(1);
+  const pageSize = ref(10);
+  const totalRecords = ref(0);
+  const totalPages = ref(0);
 
-  /** ===========================
-   * Fetch All Policies
-   * ========================== */
-  async function fetch() {
+  // Contacts modal state
+  const modalOpen = ref(false);
+  const selected = ref<EmployeeUser | null>(null);
+
+  function openModal(row: EmployeeUser) {
+    selected.value = row;
+    modalOpen.value = true;
+  }
+
+  function closeModal() {
+    modalOpen.value = false;
+    selected.value = null;
+  }
+
+  async function fetchPagination() {
     try {
       pending.value = true;
       loadError.value = null;
-      employees.value = await useApi<Employee[]>("/employee/all");
+
+      const res = await useApi<PageResponse<EmployeeUser>>(
+        `/employee?pageNumber=${pageNumber.value}`,
+      );
+
+      employees.value = res.content ?? [];
+
+      totalRecords.value = res.totalRecords ?? 0;
+      totalPages.value = res.totalPages ?? 0;
+
+      // keep these in sync if backend returns them
+      pageNumber.value = res.pageNumber ?? pageNumber.value;
+      pageSize.value = res.pageSize ?? pageSize.value;
     } catch (e) {
       loadError.value = e;
-      console.error("Fetch employees failed:", e);
       employees.value = [];
+      totalRecords.value = 0;
+      totalPages.value = 0;
     } finally {
       pending.value = false;
     }
   }
 
-  onMounted(fetch);
+  onMounted(fetchPagination);
+  watch([pageNumber, pageSize], fetchPagination);
 
-  /** ===========================
-   * RETURN EVERYTHING
-   * ========================== */
   return {
-    // state
+    // data
     employees,
-    showModal,
-    isEditOpen,
-    modalMode,
-    selectedId,
-    selectedItem,
 
-    // actions
-    fetch,
+    // pagination
+    pageNumber,
+    pageSize,
+    totalRecords,
+    totalPages,
+
+    // ui state
     pending,
     loadError,
+
+    // modal
+    modalOpen,
+    selected,
+    openModal,
+    closeModal,
+
+    // actions
+    fetchPagination,
   };
 }

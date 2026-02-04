@@ -2,20 +2,23 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { Supplier } from '~/types'
+import type { Supplier, SupplierWithContacts, SupplierContact } from '~/types'
 
 const {
+  fetchPagination,
   loadError,
   suppliers,
   pending,
   pageNumber,
   pageSize,
   totalRecords,
-  totalPages
+  totalPages,
+  modalOpen,
+  selected,
+  openModal
 } = useSupplier()
 
 const toast = useToast()
-
 
 const selectedSupplier = ref<Supplier | null>(null)
 const viewModalOpen = ref(false)
@@ -40,52 +43,51 @@ const pagination = ref({
   pageSize: 10
 })
 
-function getRowItems(row: Row<Supplier>) {
+function getRowItems(row: Row<SupplierWithContacts>) {
   return [
+    { type: 'label', label: 'Actions' },
+    { type: 'separator' },
     {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'View Product Details',
-      icon: 'i-lucide-list',
+      label: 'View Contacts',
+      icon: 'i-lucide-users',
       onSelect() {
-        selectedSupplier.value = row.original
-        viewModalOpen.value = true     
+        openModal(row.original)
       }
     },
+    { type: 'separator' },
     {
-      type: 'separator'
+      label: 'View Supplier Details',
+      icon: 'i-lucide-list',
+      onSelect() {
+        selectedSupplier.value = row.original.supplier
+        viewModalOpen.value = true
+      }
     },
+    { type: 'separator' },
     {
-      label: 'Edit Product',
+      label: 'Edit Supplier',
       icon: 'i-lucide-pencil',
       onSelect() {
-        selectedId.value = row.original.id
+        selectedId.value = row.original.supplier.id
         editModalOpen.value = true
       }
     },
+    { type: 'separator' },
     {
-      type: 'separator'
-    },
-    {
-      label: 'Delete Product',
+      label: 'Delete Supplier',
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
         toast.add({
-          title: 'Product deleted',
-          description: 'The product has been deleted.'
+          title: 'Supplier deleted',
+          description: 'The supplier has been deleted.'
         })
       }
     }
   ]
 }
 
-const columns: TableColumn<Supplier>[] = [
+const columns: TableColumn<SupplierWithContacts>[] = [
   {
     id: 'select',
     header: ({ table }) =>
@@ -113,39 +115,49 @@ const columns: TableColumn<Supplier>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'contact', header: 'Contact' },
-  { accessorKey: 'phone', header: 'Phone' },
-  { accessorKey: 'address', header: 'Address' },
+  { id: 'name', header: 'Name', accessorFn: (r) => r.supplier.name },
+  { id: 'contact', header: 'Contact', accessorFn: (r) => r.supplier.contact ?? '' },
+  { id: 'phone', header: 'Phone', accessorFn: (r) => r.supplier.phone ?? '' },
+  { id: 'address', header: 'Address', accessorFn: (r) => r.supplier.address ?? '' },
   {
-    accessorKey: 'supplierContact', header: 'Details'
+    id: 'details',
+    header: 'Details',
+    cell: ({ row }) => {
+      const count = row.original.supplierContacts
+      return h(UButton, {
+        label: `View`,
+        size: 'xs',
+        color: 'primary',
+        variant: 'soft',
+        onClick: () => openModal(row.original)
+      })
+    }
   },
   {
-    accessorKey: 'active',
+    id: 'active',
     header: 'Active',
+    accessorFn: (r) => r.supplier.active,
     cell: ({ row }) =>
       h(
         UBadge,
         {
-          color: row.original.active ? 'success' : 'error',
+          color: row.original.supplier.active ? 'success' : 'error',
           variant: 'soft',
           ui: { rounded: 'rounded-full' }
         },
-        () => (row.original.active ? 'Active' : 'Inactive')
+        () => (row.original.supplier.active ? 'Active' : 'Inactive')
       )
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      return h(
+    cell: ({ row }) =>
+      h(
         'div',
         { class: 'text-right' },
         h(
           UDropdownMenu,
           {
-            content: {
-              align: 'end'
-            },
+            content: { align: 'end' },
             items: getRowItems(row)
           },
           () =>
@@ -157,11 +169,10 @@ const columns: TableColumn<Supplier>[] = [
             })
         )
       )
-    }
   }
 ]
 
-const filter = ref< 'true' | 'false' | 'all'>('true')
+const filter = ref<'true' | 'false' | 'all'>('true')
 
 watch(
   () => table.value?.tableApi,
@@ -183,6 +194,7 @@ watch(filter, (newVal) => {
   else col.setFilterValue(newVal === 'true')
 })
 
+// Search by supplier name
 const search = computed({
   get: (): string => {
     return (table.value?.tableApi?.getColumn('name')?.getFilterValue() as string) || ''
@@ -202,7 +214,7 @@ const search = computed({
         </template>
 
         <template #right>
-          <SupplierAddModal/>
+          <SupplierAddModal @submitted="fetchPagination"/>
         </template>
       </UDashboardNavbar>
     </template>
@@ -211,7 +223,7 @@ const search = computed({
       <div v-if="loadError" class="mb-3">
         <UAlert
           color="error"
-          title="Failed to load products"
+          title="Failed to load suppliers"
           :description="loadError?.data?.message || loadError?.message || 'Unknown error'"
         />
       </div>
@@ -225,6 +237,7 @@ const search = computed({
             placeholder="Filter Supplier Name..."
           />
         </div>
+
         <div class="gap-2 flex">
           <USelect
             v-model="filter"
@@ -237,6 +250,7 @@ const search = computed({
             placeholder="Filter status"
             class="min-w-28"
           />
+
           <UDropdownMenu
             :items="
               table?.tableApi
@@ -282,12 +296,16 @@ const search = computed({
         }"
       />
 
-      <SupplierEditModal
+      <SupplierEditModal 
         v-model:open="editModalOpen"
         :id="selectedId"
+        @submitted="fetchPagination"
       />
 
-
+      <SupplierViewModal
+        v-model:open="modalOpen"
+        :data="selected"
+      />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
@@ -299,7 +317,7 @@ const search = computed({
           :default-page="pageNumber"
           :items-per-page="pageSize"
           :total="totalRecords"
-          @update:page="(p:number) => pageNumber = p"
+          @update:page="(p:number) => (pageNumber = p)"
         />
       </div>
     </template>

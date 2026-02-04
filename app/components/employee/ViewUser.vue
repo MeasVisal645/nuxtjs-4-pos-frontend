@@ -1,76 +1,62 @@
 <script setup lang="ts">
-import type { SupplierWithContacts, SupplierContact } from '~/types'
+import type { User, EmployeeUser } from '~/types'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import type { Row } from '@tanstack/table-core'
+import EditUser from './EditUser.vue';
 
 const props = defineProps<{
   open: boolean
-  data: SupplierWithContacts | null
+  data: EmployeeUser | null
 }>()
 
 const emit = defineEmits<{
   'update:open': [boolean]
+  submitted: []  
 }>()
 
-const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
-const supplierName = computed(() => props.data?.supplier?.name ?? '')
-const contacts = computed(() => props.data?.supplierContacts ?? [])
+const editModalOpen = ref(false)
+const selectedId = ref<string | number | null>(null)
 
-function getRowItem(row: Row<SupplierContact>) {
+const firstName = computed(() => props.data?.employee?.firstName ?? '')
+const lastName = computed(() => props.data?.employee?.lastName ?? '')
+
+const users = computed<User[]>(() => props.data?.user ?? [])
+
+
+function getRowItem(row: Row<User>) {
   return [
     { type: 'label', label: 'Actions' },
     { type: 'separator' },
     {
-      label: 'Edit Contact',
+      label: 'Edit User',
       icon: 'i-lucide-pencil',
       onSelect() {
-        // do something with row.original (SupplierContact)
+        selectedId.value = row.original.id
+        editModalOpen.value = true
       }
     },
     { type: 'separator' },
     {
-      label: 'Delete Contact',
+      label: 'Delete User',
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
-        // do something with row.original (SupplierContact)
+        // row.original is User
       }
     }
   ]
 }
 
-const columns: TableColumn<SupplierContact>[] = [
+const columns: TableColumn<User>[] = [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
-    }
+    cell: ({ row }) => row.index + 1
   },
-  { accessorKey: 'name', header: 'Name' },
-  { accessorKey: 'position', header: 'Position' },
-  { accessorKey: 'email', header: 'Email' },
-  { accessorKey: 'phone', header: 'Phone' },
-  {
-    id: 'active',
-    header: 'Active',
-    accessorFn: (r) => r.active,
-    cell: ({ row }) =>
-      h(
-        UBadge,
-        {
-          color: row.original.active ? 'success' : 'error',
-          variant: 'soft',
-          ui: { rounded: 'rounded-full' }
-        },
-        () => (row.original.active ? 'Active' : 'Inactive')
-      )
-  },
+  { accessorKey: 'username', header: 'Username' },
+  { accessorKey: 'role', header: 'Role' },
   {
     id: 'actions',
     cell: ({ row }) =>
@@ -106,21 +92,24 @@ const columns: TableColumn<SupplierContact>[] = [
     <template #header>
       <div class="flex items-center justify-between gap-2">
         <div>
-          <div class="font-semibold">Supplier Contacts</div>
-          <div class="text-sm text-muted" v-if="supplierName">
-            {{ supplierName }} • {{ contacts.length }} contact(s)
+          <div class="font-semibold">Employee Details</div>
+          <div class="text-sm text-muted" v-if="firstName || lastName">
+            {{ firstName }} {{ lastName }} • {{ users.length }}
           </div>
         </div>
+
+        <!-- <UButton icon="i-lucide-x" variant="ghost" color="neutral" @click="emit('update:open', false)" /> -->
       </div>
     </template>
+
     <template #body>
       <div v-if="!data" class="text-sm text-muted">
-        No supplier selected.
+        No employee selected.
       </div>
 
       <div v-else>
         <UTable
-          :data="contacts"
+          :data="users"
           :columns="columns"
           :ui="{
             base: 'table-fixed border-separate border-spacing-0',
@@ -132,8 +121,14 @@ const columns: TableColumn<SupplierContact>[] = [
           }"
         />
 
-        <div v-if="contacts.length === 0" class="text-sm text-muted mt-3">
-          This supplier has no contacts.
+        <EditUser 
+          v-model:open="editModalOpen"
+          :id="selectedId"
+          @submitted="() => emit('submitted')"
+        />
+
+        <div v-if="users.length === 0" class="text-sm text-muted mt-3">
+          This employee has no user.
         </div>
       </div>
     </template>
