@@ -15,6 +15,9 @@ const schema = z.object({
   firstName: z.string().min(1, { message: 'Required' }),
   lastName: z.string().min(1, { message: 'Required' }),
   email: z.string().email({ message: 'Invalid email' }),
+  phone: z.string().optional(),
+  natId: z.string().optional(),
+  nssfId: z.string().optional(),
   active: z.boolean({ message: 'Required' })
 
 })
@@ -23,7 +26,10 @@ const fields = [
   { name: 'id', label: "Id", type: 'number' as const, require: true, hidden: true},
   { name: 'firstName', label: 'First name', type: 'text' as const, required: true },
   { name: 'lastName', label: 'Last name', type: 'text' as const, required: true },
+  { name: 'phone', label: 'Phone', type: 'text' as const, required: true },
   { name: 'email', label: 'Email', type: 'text' as const, required: true },
+  { name: 'natId', label: 'National Id', type: 'text' as const, required: true },
+  { name: 'nssfId', label: 'NSSF Id', type: 'text' as const, required: true },
   {
     name: 'active', label: 'Active', type: 'select' as const, require: true,
     items: [{ label: 'Active', value: true }, { label: 'Inactive', value: false }]

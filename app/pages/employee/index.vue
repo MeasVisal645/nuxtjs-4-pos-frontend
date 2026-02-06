@@ -26,6 +26,7 @@ const editModalOpen = ref(false)
 const addUserModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
 
+const UAvatar = resolveComponent('UAvatar')
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
@@ -97,7 +98,7 @@ const columns: TableColumn<EmployeeUser>[] = [
         ariaLabel: 'Select row'
       })
   },
-    {
+  {
     id: 'no',
     header: 'No',
     cell: ({ row, table }) => {
@@ -106,8 +107,32 @@ const columns: TableColumn<EmployeeUser>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { id: 'firstName', header: 'firstName', accessorFn: (r) => r.employee.firstName ?? '' },
-  { id: 'lastName', header: 'lastName', accessorFn: (r) => r.employee.lastName ?? '' },
+  {
+    id: 'name',
+    header: 'Fullname',
+    cell: ({ row }) => {
+      const emp = row.original.employee
+
+      const fullName = [emp.firstName, emp.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+
+      return h('div', { class: 'flex items-center gap-3' }, [
+        h(UAvatar, {
+          src: emp.imageUrl || undefined,
+          alt: fullName || 'Employee',
+          size: 'lg'
+        }),
+        h('div', undefined, [
+          h('p', { class: 'font-medium text-highlighted' }, fullName || '-'),
+        ])
+      ])
+    }
+  },
+  { id: 'phone', header: 'Phone', accessorFn: (r) => r.employee.phone ?? '' },
+  { id: 'natId', header: 'National ID', accessorFn: (r) => r.employee.natId ?? '' },
+  { id: 'nssfId', header: 'NSSF ID', accessorFn: (r) => r.employee.nssfId ?? '' },
   { id: 'email', header: 'Email', accessorFn: (r) => r.employee.email ?? '' },
   {
     id: 'details',
@@ -162,32 +187,21 @@ const columns: TableColumn<EmployeeUser>[] = [
   }
 ]
 
-const filter = ref< 'true' | 'false' | 'all'>('true')
+const filter = ref<'true' | 'false' | 'all'>('true')
 
 watch(
-  () => table.value?.tableApi,
-  (api) => {
+  [() => table.value?.tableApi, filter],
+  ([api, val]) => {
     if (!api) return
-    api.getColumn('active')?.setFilterValue(true)
+    const col = api.getColumn('active')
+    if (!col) return
+
+    if (val === 'all') col.setFilterValue(undefined)
+    else col.setFilterValue(val === 'true')
   },
   { immediate: true }
 )
 
-watch(filter, (newVal) => {
-  const api = table.value?.tableApi
-  if (!api) return
-
-  const col = api.getColumn('active')
-  if (!col) return
-
-  if (newVal === 'all') {
-    col.setFilterValue(undefined)
-  } else if (newVal === 'true') {
-    col.setFilterValue(true)
-  } else if (newVal === 'false') {
-    col.setFilterValue(false)
-  }
-})
 
 
 // Search Filter
@@ -218,7 +232,10 @@ watch(globalFilter, (value) => {
         </template>
 
         <template #right>
-          <EmployeeAddModal @submitted="fetchPagination" />
+          <!-- <EmployeeAddModal @submitted="fetchPagination" /> -->
+          <EmployeeAddModal 
+            @submitted="fetchPagination"
+          />
         </template>
       </UDashboardNavbar>
     </template>
@@ -305,12 +322,6 @@ watch(globalFilter, (value) => {
         :id="selectedId"
         @submitted="fetchPagination"
       />
-
-      <!-- <EmployeeAddUser
-        v-model:open="addUserModalOpen"
-        :id="selectedId"
-        @submitted="fetchPagination"
-      /> -->
 
       <EmployeeViewUser 
         v-model:open="modalOpen"

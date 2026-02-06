@@ -44,7 +44,13 @@ const fields = computed(() => [
   { name: 'quantity', label: 'Quantity', type: 'number' as const, required: true },
   { name: 'unit', label: 'Unit', type: 'select' as const, required: true , items: unit},
   { name: 'categoryId', label: 'Category', type: 'select' as const, required: true, items: categoryItems.value },
-  { name: 'brandId', label: 'Brand', type: 'select' as const, required: false, items: brandItems.value }
+  { name: 'brandId', label: 'Brand', type: 'select' as const, required: false, items: brandItems.value },
+  { 
+    name: 'image', 
+    label: 'Image', 
+    type: 'file' as const, 
+    placeholder: 'Select product image (Max 1MB)' 
+  }
 ])
 
 const unit = [
@@ -59,13 +65,14 @@ const unit = [
 </script>
 
 <template>
-  <FormModal
+  <FormImageModal
     v-model:open="createModalOpen"
     mode="create"
     title="New Product"
     buttonLabel="New Product"
     :schema="schema"
     :fields="fields"
+    enctype="multipart/form-data"
     createUrl="/product/create"
     @submitted="emit('submitted')"
   />

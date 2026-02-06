@@ -4,6 +4,10 @@ import type { TableColumn } from '@nuxt/ui'
 import type { Row } from '@tanstack/table-core'
 import EditUser from './EditUser.vue';
 
+const {
+  fetchPagination
+} = useEmployee()
+
 const props = defineProps<{
   open: boolean
   data: EmployeeUser | null
@@ -23,6 +27,10 @@ const selectedId = ref<string | number | null>(null)
 function openAddUser() {
   selectedId.value = props.data?.employee?.id ?? null
   addModalOpen.value = true
+}
+
+async function refresh() {
+  await fetchPagination()
 }
 
 const firstName = computed(() => props.data?.employee?.firstName ?? '')
@@ -104,11 +112,17 @@ const columns: TableColumn<User>[] = [
           </div>
         </div>
 
+
         <EmployeeAddUser
           v-model:open="addModalOpen"
           :id="props.data?.employee?.id ?? null"
-          @submitted="() => emit('submitted')"
+          @submitted="refresh"
         />
+        <!-- <EmployeeAddUser
+          v-model:open="addModalOpen"
+          :id="props.data?.employee?.id ?? null"
+          @submitted="() => emit('submitted')"
+        /> -->
       </div>
     </template>
 

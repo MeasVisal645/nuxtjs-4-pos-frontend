@@ -12,36 +12,35 @@ const { logout } = useAuth()
 const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
 
-const user = ref < {
-  username: string,
+const user = ref<{
+  id: number
+  username: string
   role?: string
+  imageUrl?: string | null
 } | null>(null)
+
+const avatar = computed(() =>
+  user.value?.imageUrl ? { src: user.value.imageUrl, alt: user.value.username } : undefined
+)
+
 
 onMounted(async () => {
   try {
-    const response = await useApi<{ id: number; username: string; role: string }>('/user/me')
+    const response = await useApi<{ id: number; username: string; role: string; imageUrl?: string | null }>('/user/me')
     user.value = response
   } catch (error: any) {
       console.error("Failed to load user:", error)
   }
 })
 
-// base
-// const user = ref({
-//   name: 'Benjamin Canac',
-//   avatar: {
-//     src: 'https://github.com/benjamincanac.png',
-//     alt: 'Benjamin Canac'
-//   }
-// })
-
 const items = computed<DropdownMenuItem[][]>(() => ([[{
-  type: 'label',
-  label: user.value?.username,
-  // avatar: user.value.avatar
+    type: 'label',
+    label: user.value?.username ?? '...',
+    avatar: avatar.value
 }], [{
   label: 'Profile',
-  icon: 'i-lucide-user'
+  icon: 'i-lucide-user',
+  avatar: avatar.value
 }, {
   label: 'Settings',
   icon: 'i-lucide-settings',
@@ -138,6 +137,7 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
         label: collapsed ? undefined : user?.username,
         trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
       }"
+      :avatar="avatar"
       color="neutral"
       variant="ghost"
       block

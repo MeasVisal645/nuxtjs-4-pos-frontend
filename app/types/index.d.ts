@@ -40,14 +40,19 @@ export interface Product {
   quantity: number;
   unit: string;
   active: boolean;
+  imageUrl: AvatarProps | null;
 }
 
 export interface Employee {
   id: number;
   firstName: string;
   lastName: string;
+  phone: string;
   email: string;
+  natId: string;
+  nssfId: string;
   active: boolean;
+  imageUrl: AvatarProps | null;
 }
 
 export interface User {
@@ -55,6 +60,7 @@ export interface User {
   username: string;
   password: string;
   role: string;
+  imageUrl: AvatarProps | null;
 }
 
 export interface EmployeeUser {

@@ -23,6 +23,7 @@ const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
 
+const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
@@ -111,6 +112,20 @@ const columns: TableColumn<Product>[] = [
       const pageIndex = table.getState().pagination.pageIndex
       const pageSize = table.getState().pagination.pageSize
       return pageIndex * pageSize + row.index + 1
+    }
+  },
+  {
+    id: 'image',
+    header: 'Image',
+    cell: ({ row }) => {
+      const product = row.original
+      return h('div', { class: 'flex items-center gap-3' }, [
+        h(UAvatar, {
+          src: product.imageUrl || undefined,
+          alt: product.name || 'Image',
+          size: 'lg'
+        }),
+      ])
     }
   },
   { accessorKey: 'code', header: 'Code' },
