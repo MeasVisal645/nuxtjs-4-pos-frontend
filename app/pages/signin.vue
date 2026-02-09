@@ -59,6 +59,16 @@ const onSubmit = async () => {
           Login
         </UButton>
       </form>
+
+        <template #footer>
+          <div class="text-xs text-center text-gray-500">
+            By signing in, you agree to our 
+            <NuxtLink to="/terms" class="text-primary hover:underline">Terms</NuxtLink> 
+            and 
+            <NuxtLink to="/privacy" class="text-primary hover:underline">Privacy Policy</NuxtLink>.
+          </div>
+        </template>
+
     </UCard>
   </div>
 </template>
