@@ -4,6 +4,6 @@
 
 <template>
   <div>
-    
+    <span>POS Page</span>
   </div>
 </template>
