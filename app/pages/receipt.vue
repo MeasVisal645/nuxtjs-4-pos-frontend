@@ -10,15 +10,10 @@ const order = computed(() => {
   return str ? JSON.parse(str) : null
 })
 
-
-
-// Trigger print once the component is mounted
 onMounted(() => {
   if (order.value) {
     setTimeout(() => {
       window.print()
-      // Optional: Navigate back to POS after printing/cancelling
-      // window.onafterprint = () => navigateTo('/')
     }, 500)
   }
 })
@@ -49,12 +44,18 @@ onMounted(() => {
       <div class="text-center mt-8">
         <p class="text-black">Thank you for your visit!</p>
       </div>
+      <div class="flex justify-center gap-2 print:hidden">
+        <UButton to="/pos" variant="outline" icon="i-heroicons-arrow-left" class="text-blue-800">
+          Back
+        </UButton>
+      </div>
     </div>
     
     <div v-else class="text-center py-10">
       <p>No order data found.</p>
-      <UButton to="/pos" variant="ghost" class="text-black">Return to POS</UButton>
-    </div>
+        <UButton to="/pos" variant="outline" class="text-blue-800">Return to POS</UButton>
+      </div>
+      
   </div>
 </template>
 
