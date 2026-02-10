@@ -4,11 +4,15 @@ import toArray from '~/utils/helper'
 definePageMeta({ layout: 'blank' })
 
 type Customer = { id: number; name: string }
+type Category = { id: number; name: string }
+
+
 
 // ---------- State ----------
 const products = ref<any[]>([])
-const categories = ref<string[]>(['All'])
+const categories = ref<Category[]>([])
 const searchQuery = ref('')
+const categoryNames = ref<string[]>(['All'])
 const selectedCategory = ref('All')
 const cart = ref<{ product: any; quantity: number }[]>([])
 const isPaymentModalOpen = ref(false)
@@ -42,7 +46,10 @@ async function loadProductsAndCategories() {
   const catList = toArray<any>(catRes)
 
   products.value = prodList
-  categories.value = ['All', ...catList.map((c: any) => c.name).filter(Boolean)]
+  categories.value = catList as Category[]
+  categoryNames.value = ['All', ...catList.map((c: any) => c.name).filter(Boolean)]
+
+
 }
 
 onMounted(async () => {
@@ -57,17 +64,24 @@ onMounted(async () => {
 const filteredProducts = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
 
+  const selectedCat = categories.value.find(
+    c => c.name === selectedCategory.value
+  )
+
   return products.value.filter((p) => {
     const name = String(p?.name ?? '').toLowerCase()
     const code = String(p?.code ?? '').toLowerCase()
 
     const matchesSearch = !query || name.includes(query) || code.includes(query)
+
     const matchesCategory =
-      selectedCategory.value === 'All' || p?.category?.name === selectedCategory.value
+      selectedCategory.value === 'All' ||
+      p.categoryId === selectedCat?.id
 
     return matchesSearch && matchesCategory
   })
 })
+
 
 const subtotalCents = computed(() =>
   cart.value.reduce((sum, item) => sum + Math.round(Number(item.product.price ?? 0) * 100) * item.quantity, 0)
@@ -119,10 +133,9 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       return
     }
 
-    // ✅ receipt data (for receipt UI)
     const receiptData = {
-      customerId, // backend id
-      customerName: selectedCustomerName.value, // display only
+      customerId,
+      customerName: selectedCustomerName.value,
       items: cart.value.map(i => ({
         name: i.product.name,
         price: Number(i.product.price ?? 0),
@@ -133,7 +146,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       paymentMethod: method
     }
 
-    // ✅ backend body (only id)
     const body = cart.value.map(i => ({
       code: i.product.code,
       quantity: i.quantity,
@@ -141,7 +153,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       paymentMethod: method
     }))
 
-    await useApi('/order/create', { method: 'POST', body }) // change to /api/v1/order/create if needed
+    await useApi('/order/create', { method: 'POST', body })
 
     isPaymentModalOpen.value = false
     cart.value = []
@@ -170,7 +182,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
           <div class="h-6 w-px bg-gray-200 dark:bg-gray-700" />
           <div class="flex items-center gap-1 overflow-x-auto">
             <UButton
-              v-for="cat in categories"
+              v-for="cat in categoryNames"
               :key="cat"
               :label="cat"
               :variant="selectedCategory === cat ? 'solid' : 'ghost'"
@@ -198,9 +210,21 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
             :ui="{ body: 'p-3' }"
             @click="addToCart(product)"
           >
-            <div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mb-3">
-              <UIcon :name="product.image || 'i-lucide-package'" class="w-12 h-12 text-gray-400" />
+            <div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mb-3 overflow-hidden">
+              <img
+                v-if="product.imageUrl"
+                :src="product.imageUrl"
+                :alt="product.name"
+                class="w-full h-full object-contain p-2"
+                loading="lazy"
+              />
+              <UIcon
+                v-else
+                name="i-lucide-package"
+                class="w-12 h-12 text-gray-400"
+              />
             </div>
+
             <div class="font-semibold truncate text-sm">{{ product.name }}</div>
             <div class="text-info-600 dark:text-info-400 font-bold text-sm mt-1">
               ${{ Number(product.price ?? 0).toFixed(2) }}
@@ -226,7 +250,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         </div>
 
         <div class="mt-3">
-          <div class="text-xs text-gray-500 mb-1">Customer</div>
           <USelect
             v-model="selectedCustomerId"
             :items="customerItems"
@@ -249,9 +272,22 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
           :key="item.product.id"
           class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg"
         >
-          <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm">
-            <UIcon :name="item.product.image || 'i-lucide-package'" class="w-6 h-6 text-gray-400" />
+          <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+            <img
+              v-if="item.product.imageUrl"
+              :src="item.product.imageUrl"
+              :alt="item.product.name"
+              class="w-full h-full object-contain p-2"
+              loading="lazy"
+            />
+            <UIcon
+              v-else
+              name="i-lucide-package"
+              class="w-6 h-6 text-gray-400"
+            />
           </div>
+
+
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
             <div class="text-xs text-gray-500">${{ Number(item.product.price ?? 0).toFixed(2) }}</div>
@@ -290,7 +326,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
             :disabled="cart.length === 0"
             @click="handleCheckout"
           >
-            Charge ${{ total.toFixed(2) }}
+            Check out ${{ total.toFixed(2) }}
           </UButton>
         </div>
       </template>

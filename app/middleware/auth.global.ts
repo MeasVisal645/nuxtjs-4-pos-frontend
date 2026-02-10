@@ -1,31 +1,37 @@
 import { jwtDecode } from "jwt-decode";
 
 export default defineNuxtRouteMiddleware((to) => {
-  const token = useCookie<string | null>("token", { default: () => null });
+  const token = useCookie<string | null>("token", {
+    default: () => null,
+    sameSite: "lax"
+  });
+
   const publicRoutes = ["/signin", "/terms", "/privacy"];
 
-  if (token.value) {
-    try {
-      const { exp } = jwtDecode<{ exp: number }>(token.value);
-      if (Date.now() >= exp * 1000) {
-        token.value = null; 
-        if (!publicRoutes.includes(to.path)) {
-          return navigateTo("/signin");
-        }
-      }
-    } catch (e) {
-      token.value = null;
-      if (!publicRoutes.includes(to.path)) {
-        return navigateTo("/signin");
-      }
+  const logout = () => {
+    token.value = null;            
+    return navigateTo("/signin", { replace: true });
+  };
+
+  if (!token.value) {
+    if (!publicRoutes.includes(to.path)) return logout();
+    return;
+  }
+
+  try {
+    const { exp } = jwtDecode<{ exp: number }>(token.value);
+
+    const isExpired = Date.now() >= exp * 1000;
+
+    if (isExpired) {
+      return logout();   
     }
+
+  } catch {
+    return logout();     
   }
 
-  if (!token.value && !publicRoutes.includes(to.path)) {
-    return navigateTo("/signin");
-  }
-
-  if (token.value && to.path === "/signin") {
-    return navigateTo("/");
+  if (to.path === "/signin") {
+    return navigateTo("/", { replace: true });
   }
 });
