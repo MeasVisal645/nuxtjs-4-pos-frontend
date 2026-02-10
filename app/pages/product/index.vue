@@ -223,6 +223,11 @@ const globalFilterFn = (row: any, _columnId: string, filterValue: string) => {
 watch(globalFilter, (value) => {
   table.value?.tableApi?.setGlobalFilter(value)
 })
+
+
+const defaultValues = ref<Record<string, any>>({})
+
+
 </script>
 
 <template>
@@ -234,7 +239,10 @@ watch(globalFilter, (value) => {
         </template>
 
         <template #right>
-          <ProductAddModal @submitted="fetchPagination" />
+          <ProductAddModal 
+            @submitted="fetchPagination" 
+            :defaultValues="defaultValues" 
+          />
         </template>
       </UDashboardNavbar>
     </template>
@@ -320,6 +328,7 @@ watch(globalFilter, (value) => {
         v-model:open="editModalOpen"
         :id="selectedId"
         @submitted="fetchPagination"
+        :defaultValues="defaultValues" 
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">

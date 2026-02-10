@@ -14,6 +14,9 @@ type FieldConfig = {
   required?: boolean
   disabled?: boolean
   hidden?: boolean
+  trailingIcon?: string
+  trailingText?: string
+  onTrailingClick?: (ctx: { state: Record<string, any> }) => void | Promise<void>
 }
 
 const props = defineProps<{
@@ -153,14 +156,29 @@ async function onSubmit(event: FormSubmitEvent<any>) {
       <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
         <template v-for="f in fields.filter(f => !f.hidden)" :key="f.name">
           <UFormField :label="f.label" :name="f.name">
+            <!-- Text & Number -->
             <UInput
               v-if="f.type === 'text' || f.type === 'number'"
               v-model="state[f.name]"
               :type="f.type"
-              :placeholder="f.placeholder"
               class="w-full"
               :disabled="isLoading || f.disabled"
-            />
+              :placeholder="f.placeholder"
+            >
+              <template #trailing v-if="f.onTrailingClick">
+                <UButton
+                  type="button"
+                  :icon="f.trailingIcon || 'i-lucide-refresh-ccw'"
+                  variant="ghost"
+                  size="xs"
+                  :disabled="isLoading || f.disabled"
+                  @click="f.onTrailingClick({ state })"
+                />
+              </template>
+            </UInput>
+
+
+            <!-- Select -->
             <USelect
               v-else-if="f.type === 'select'"
               v-model="state[f.name]"
