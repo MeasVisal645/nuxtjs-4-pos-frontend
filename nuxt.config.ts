@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxt/eslint", "@nuxt/ui", "@vueuse/nuxt"],
 
+  build: {
+    transpile: ['jwt-decode']
+  },
+
   css: ["~/assets/css/main.css"],
 
   routeRules: {
@@ -22,8 +26,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // apiBaseUrl: process.env.PROD_API_BASE_URL,
-      apiBaseUrl: process.env.DEV_API_BASE_URL,
+      apiBaseUrl: process.env.PROD_API_BASE_URL,
+      // apiBaseUrl: process.env.DEV_API_BASE_URL,
     },
     googleFonts: {
       families: {

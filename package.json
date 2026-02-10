@@ -18,6 +18,7 @@
     "@unovis/vue": "^1.6.2",
     "@vueuse/nuxt": "^14.1.0",
     "date-fns": "^4.1.0",
+    "jwt-decode": "^4.0.0",
     "nuxt": "4.3.0",
     "zod": "^4.1.13"
   },
