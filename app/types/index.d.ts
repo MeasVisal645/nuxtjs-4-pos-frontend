@@ -127,6 +127,13 @@ export interface SupplierWithContacts {
   supplierContacts: SupplierContact[];
 }
 
+type LowStockProduct = {
+  id: number;
+  code: string;
+  name: string;
+  quantity: number;
+};
+
 export interface Notification {
   id: number;
   unread?: boolean;

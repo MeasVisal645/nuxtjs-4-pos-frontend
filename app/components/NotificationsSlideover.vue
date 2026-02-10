@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { formatTimeAgo } from '@vueuse/core'
-import type { Notification, Product } from '~/types'
-const { lowStockThreshold } = useNotificationSettings()
+import type { LowStockProduct, Notification, Product } from '~/types'
 
+const { lowStockThreshold } = useNotificationSettings()
 const { isNotificationsSlideoverOpen } = useDashboard()
 
-const { data: notifications } = await useFetch<Notification[]>('/api/notifications')
+const products = ref<LowStockProduct[]>([])
+const pending = ref(false)
 
-const { data: products, pending, refresh } = await useFetch<Product[]>('/product/all')
+async function loadProducts() {
+  pending.value = true
+  try {
+    const res = await useApi('/product/all')
+    products.value = Array.isArray(res) ? (res as Product[]) : []
+  } finally {
+    pending.value = false
+  }
+}
 
 const lowStock = computed(() => {
   const th = Number(lowStockThreshold.value) || 0
@@ -16,9 +25,13 @@ const lowStock = computed(() => {
     .sort((a, b) => Number(a.quantity) - Number(b.quantity))
 })
 
-watch(isNotificationsSlideoverOpen, (open) => {
-  if (open) refresh()
-})
+watch(
+  isNotificationsSlideoverOpen,
+  (open) => {
+    if (open) loadProducts()
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
