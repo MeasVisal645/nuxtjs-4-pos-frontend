@@ -14,6 +14,9 @@ type FieldConfig = {
   required?: boolean
   disabled?: boolean
   hidden?: boolean
+  trailingIcon?: string
+  trailingText?: string
+  onTrailingClick?: (ctx: { state: Record<string, any> }) => void | Promise<void>
 }
 
 const props = defineProps<{
@@ -223,8 +226,19 @@ async function onSubmit(event: FormSubmitEvent<any>) {
               class="w-full"
               :disabled="isLoading || f.disabled"
               :placeholder="f.placeholder"
-            />
-
+            >
+              <template #trailing v-if="f.onTrailingClick">
+                <UButton
+                  type="button"
+                  :icon="f.trailingIcon || 'i-lucide-refresh-ccw'"
+                  :label="f.trailingText"
+                  variant="ghost"
+                  size="xs"
+                  :disabled="isLoading || f.disabled"
+                  @click="f.onTrailingClick({ state })"
+                />
+              </template>
+            </UInput>
             <!-- Select -->
             <USelect
               v-else-if="f.type === 'select'"

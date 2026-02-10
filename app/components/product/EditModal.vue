@@ -19,7 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const schema = z.object({
-  code: z.string().min(1, { message: 'Required' }),
+  code: z.string(),
   name: z.string().min(1, { message: 'Required' }),
   cost: z.coerce.number(),
   price: z.coerce.number(),
@@ -44,9 +44,44 @@ onMounted(() => {
   loadSelects().catch(console.error)
 })
 
+function generateCode(length = 10): string {
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += Math.floor(Math.random() * 10)
+  }
+  return result
+}
+
+async function isCodeExists(code: string): Promise<boolean> {
+  return await useApi<boolean>(`/product/check-code/${code}`)
+}
+
+async function generateUniqueCode(): Promise<string> {
+  let code = generateCode()
+
+  for (let i = 0; i < 10; i++) {
+    const exists = await isCodeExists(code)
+
+    if (!exists) return code
+
+    code = generateCode()
+  }
+
+  throw new Error('Unable to generate unique product code')
+}
+
 const fields = computed(() => [
   { name: 'id', label: 'Id', type: 'text' as const, required: true, hidden: true },
-  { name: 'code', label: 'Product Code', type: 'text' as const, required: true },
+  {
+    name: 'code',
+    label: 'Product Code',
+    type: 'text' as const,
+    required: true,
+    trailingIcon: 'i-lucide-refresh-ccw',
+    onTrailingClick: async ({ state }: { state: Record<string, any> }) => {
+      state.code = await generateUniqueCode()
+    }
+  },
   { name: 'name', label: 'Product Name', type: 'text' as const, required: true },
   { name: 'cost', label: 'Cost', type: 'number' as const, required: true },
   { name: 'price', label: 'Price', type: 'number' as const, required: true },
