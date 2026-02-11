@@ -134,6 +134,7 @@ type LowStockProduct = {
   quantity: number;
 };
 
+
 export interface Notification {
   id: number;
   unread?: boolean;

@@ -24,7 +24,6 @@ const onSubmit = async () => {
   try {
     await login({ username: username.value, password: password.value })
     await router.push("/")
-    // console.log("token:", useCookie("token").value)
 
   } catch (e: any) {
     errorMsg.value = e?.data?.message || e?.message || "Login failed"

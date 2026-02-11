@@ -6,15 +6,15 @@ const toast = useToast()
 const open = ref(false)
 
 const links = [[{
-  label: 'Home',
-  icon: 'i-lucide-house',
+  label: 'Dashboard',
+  icon: 'i-lucide-gauge',
   to: '/',
   onSelect: () => {
     open.value = false
   }
 }, {
   label: 'POS',
-  icon: 'i-lucide-gallery-vertical-end',
+  icon: 'i-lucide-house',
   defaultOpen: false,
   to: '/pos',
   onSelect: () => {
@@ -70,6 +70,20 @@ const links = [[{
   label: 'Suppliers',
   icon: 'i-lucide-contact',
   to: '/supplier',
+  onSelect: () => {
+      open.value = false
+    }
+  }, {
+  label: 'Customers',
+  icon: 'i-lucide-users',
+  to: '/customer',
+  onSelect: () => {
+      open.value = false
+    }
+  }, {
+  label: 'Sales Report',
+  icon: 'i-lucide-file',
+  to: '/sale-report',
   onSelect: () => {
       open.value = false
     }

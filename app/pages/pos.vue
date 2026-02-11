@@ -307,7 +307,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
               v-if="item.product.imageUrl"
               :src="item.product.imageUrl"
               :alt="item.product.name"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-contain p-2"
               loading="lazy"
             />
             <UIcon
@@ -360,7 +360,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
             :disabled="cart.length === 0"
             @click="handleCheckout"
           >
-            Charge ${{ totalKHR.toFixed(2) }}
+            Check out ${{ totalKHR.toFixed(2) }}
           </UButton>
         </div>
       </template>
