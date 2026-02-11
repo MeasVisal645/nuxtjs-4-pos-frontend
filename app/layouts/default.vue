@@ -14,7 +14,7 @@ const links = [[{
   }
 }, {
   label: 'POS',
-  icon: 'i-lucide-list',
+  icon: 'i-lucide-gallery-vertical-end',
   defaultOpen: false,
   to: '/pos',
   onSelect: () => {
@@ -34,20 +34,8 @@ const links = [[{
         open.value = false
       }
     }, {
-      label: 'Import Product',
-      to: '/product/import',
-      onSelect: () => {
-        open.value = false
-      }
-    }, {
       label: 'Print Label/Barcode',
       to: '/product/print',
-      onSelect: () => {
-        open.value = false
-      }
-    }, {
-      label: 'Quantity Adjustment',
-      to: '/product/quantity-adjustment',
       onSelect: () => {
         open.value = false
       }
@@ -72,13 +60,20 @@ const links = [[{
       open.value = false
     }
   }, {
+  label: 'Customers',
+  icon: 'i-lucide-users-round',
+  to: '/customer',
+  onSelect: () => {
+      open.value = false
+    }
+  }, {
   label: 'Suppliers',
-  icon: 'i-lucide-users',
+  icon: 'i-lucide-contact',
   to: '/supplier',
   onSelect: () => {
       open.value = false
     }
-  },{
+  }, {
   label: 'Employees',
   icon: 'i-lucide-user',
   to: '/employee',
@@ -86,6 +81,28 @@ const links = [[{
       open.value = false
     }
   },  {
+    label: 'Reports',
+    to: '/report',
+    icon: 'i-lucide-book-text',
+    defaultOpen: false,
+    type: 'trigger',
+  children: [
+    {
+      label: 'Sale Report',
+      to: '/report/sale-report',
+      exact: true,
+      onSelect: () => {
+        open.value = false
+      }
+    },{
+      label: 'Quantity Adjustment',
+      to: '/product/quantity-adjustment',
+      exact: true,
+      onSelect: () => {
+        open.value = false
+      }
+    }]
+  }, {
     label: 'Settings',
     to: '/setting',
     icon: 'i-lucide-cog',
@@ -96,25 +113,6 @@ const links = [[{
       label: 'Notification',
       to: '/setting/notification',
       exact: true,
-      onSelect: () => {
-        open.value = false
-      }
-    },{
-      label: 'Add User',
-      to: '/setting/add-user',
-      exact: true,
-      onSelect: () => {
-        open.value = false
-      }
-    }, {
-      label: 'Add Supplier',
-      to: '/setting/add-supplier',
-      onSelect: () => {
-        open.value = false
-      }
-    }, {
-      label: 'Import Product',
-      to: '/product/import',
       onSelect: () => {
         open.value = false
       }

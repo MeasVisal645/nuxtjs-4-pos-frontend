@@ -10,9 +10,9 @@ const items = [[{
   icon: 'i-lucide-send',
   to: '/inbox'
 }, {
-  label: 'New customer',
+  label: 'New supplier',
   icon: 'i-lucide-user-plus',
-  to: '/customers'
+  to: '/Supplier'
 }]] satisfies DropdownMenuItem[][]
 
 const range = shallowRef<Range>({
@@ -23,9 +23,9 @@ const period = ref<Period>('daily')
 </script>
 
 <template>
-  <UDashboardPanel id="dashboard">
+  <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="Dashboard" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="Home" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -50,15 +50,18 @@ const period = ref<Period>('daily')
         </template>
       </UDashboardNavbar>
 
-      <!-- Nav bar -->
       <UDashboardToolbar>
         <template #left>
+          <HomeDateRangePicker v-model="range" class="-ms-1" />
+          <HomePeriodSelect v-model="period" :range="range" />
         </template>
       </UDashboardToolbar>
     </template>
 
-    <!-- Body -->
     <template #body>
+      <HomeStats :period="period" :range="range" />
+      <HomeChart :period="period" :range="range" />
+      <HomeSales :period="period" :range="range" />
     </template>
   </UDashboardPanel>
 </template>

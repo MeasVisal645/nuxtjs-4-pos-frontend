@@ -68,7 +68,7 @@ const columns: TableColumn<QuantityAdjustment>[] = [
       h(
         UBadge,
         {
-          color: row.original.method === 'ADD' ? 'warning' : row.original.method === 'SUBTRACT' ? 'error' : 'warning',
+          color: row.original.method === 'ADD' ? 'info' : row.original.method === 'SUBTRACT' ? 'error' : 'warning',
           variant: 'soft',
           ui: { rounded: 'rounded-full', font: 'font-medium' }
         },
@@ -82,7 +82,7 @@ const columns: TableColumn<QuantityAdjustment>[] = [
       h(
         UBadge,
         {
-          color: row.original.quantity >= 10 ? 'success' : 'error',
+          color: row.original.quantity >= 10 ? 'info' : 'error',
           variant: 'soft',
           ui: { rounded: 'rounded-full', font: 'font-medium' }
         },
@@ -96,7 +96,7 @@ const columns: TableColumn<QuantityAdjustment>[] = [
       h(
         UBadge,
         {
-          color: row.original.complete ? 'success' : 'error',
+          color: row.original.complete ? 'info' : 'error',
           variant: 'soft',
           ui: { rounded: 'rounded-full' }
         },

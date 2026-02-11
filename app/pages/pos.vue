@@ -6,8 +6,6 @@ definePageMeta({ layout: 'blank' })
 type Customer = { id: number; name: string }
 type Category = { id: number; name: string }
 
-
-
 // ---------- State ----------
 const products = ref<any[]>([])
 const categories = ref<Category[]>([])
@@ -16,6 +14,7 @@ const categoryNames = ref<string[]>(['All'])
 const selectedCategory = ref('All')
 const cart = ref<{ product: any; quantity: number }[]>([])
 const isPaymentModalOpen = ref(false)
+const KHR_RATE = 4100
 
 const customers = ref<Customer[]>([])
 const customerItems = ref<{ label: string; value: number }[]>([])
@@ -82,16 +81,32 @@ const filteredProducts = computed(() => {
   })
 })
 
-
+// ---------- Calculate Total ----------
 const subtotalCents = computed(() =>
   cart.value.reduce((sum, item) => sum + Math.round(Number(item.product.price ?? 0) * 100) * item.quantity, 0)
 )
-const taxCents = computed(() => Math.round(subtotalCents.value * 0.08))
-const totalCents = computed(() => subtotalCents.value + taxCents.value)
+const totalCents = computed(() => subtotalCents.value + taxUSD.value)
 
-const subtotal = computed(() => subtotalCents.value / 100)
-const tax = computed(() => taxCents.value / 100)
-const total = computed(() => totalCents.value / 100)
+const subtotalUSD = computed(() => subtotalKHR.value / KHR_RATE)
+const taxUSD = computed(() => taxKHR.value / KHR_RATE)
+const totalUSD = computed(() => totalKHR.value / KHR_RATE)
+
+// ---------- Currency helpers ----------
+const subtotalKHR = computed(() =>
+  cart.value.reduce((sum, item) => sum + Number(item.product.price ?? 0) * item.quantity, 0)
+)
+
+const taxKHR = computed(() => Math.round(subtotalKHR.value * 0.10))
+const totalKHR = computed(() => subtotalKHR.value + taxKHR.value)
+
+function usd(n: number) {
+  return `$${n.toFixed(2)}`
+}
+
+function khr(n: number) {
+  return `${n.toLocaleString()}៛`
+}
+
 
 const totalItems = computed(() => cart.value.reduce((sum, i) => sum + i.quantity, 0))
 
@@ -141,7 +156,11 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         price: Number(i.product.price ?? 0),
         quantity: i.quantity
       })),
-      total: total.value,
+      totalKHR: totalKHR.value,
+      totalUSD: totalUSD.value,
+      tax: taxUSD.value,
+      subtotalKHR: subtotalKHR.value,
+      subtotalUSD: subtotalUSD.value,
       date: new Date().toISOString(),
       paymentMethod: method
     }
@@ -174,31 +193,42 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     <!-- Product Section -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Filters Header -->
-      <div class="flex justify-between items-center mb-4 bg-white dark:bg-gray-900 p-2 rounded-xl shadow-sm">
-        <div class="flex items-center gap-4">
-          <NuxtLink to="/">
+      <div class="flex items-center gap-3 mb-4 bg-white dark:bg-gray-900 p-2 rounded-xl shadow-sm">
+        <!-- Left -->
+        <div class="flex items-center gap-4 flex-1 min-w-0">
+          <NuxtLink to="/" class="shrink-0">
             <UButton variant="ghost" color="neutral" icon="i-lucide-arrow-left" label="Back" />
           </NuxtLink>
-          <div class="h-6 w-px bg-gray-200 dark:bg-gray-700" />
-          <div class="flex items-center gap-1 overflow-x-auto">
-            <UButton
-              v-for="cat in categoryNames"
-              :key="cat"
-              :label="cat"
-              :variant="selectedCategory === cat ? 'solid' : 'ghost'"
-              :color="selectedCategory === cat ? 'info' : 'neutral'"
-              size="sm"
-              @click="selectedCategory = cat"
-            />
+
+          <div class="h-6 w-px bg-gray-200 dark:bg-gray-700 shrink-0" />
+
+          <!-- Scrollable categories -->
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar">
+              <UButton
+                v-for="cat in categoryNames"
+                :key="cat"
+                :label="cat"
+                class="shrink-0"
+                :variant="selectedCategory === cat ? 'solid' : 'ghost'"
+                :color="selectedCategory === cat ? 'info' : 'neutral'"
+                size="sm"
+                @click="selectedCategory = cat"
+              />
+            </div>
           </div>
         </div>
 
-        <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search items..." class="w-72">
-          <template #trailing v-if="searchQuery">
-            <UButton icon="i-lucide-x" variant="ghost" size="xs" @click="searchQuery=''" />
-          </template>
-        </UInput>
+        <!-- Right -->
+        <div class="shrink-0">
+          <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search items..." class="w-72">
+            <template #trailing v-if="searchQuery">
+              <UButton icon="i-lucide-x" variant="ghost" size="xs" @click="searchQuery=''" />
+            </template>
+          </UInput>
+        </div>
       </div>
+
 
       <!-- Products Grid -->
       <div class="flex-1 overflow-y-auto p-2">
@@ -227,7 +257,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
 
             <div class="font-semibold truncate text-sm">{{ product.name }}</div>
             <div class="text-info-600 dark:text-info-400 font-bold text-sm mt-1">
-              ${{ Number(product.price ?? 0).toFixed(2) }}
+              {{ khr(product.price ?? 0) }}
             </div>
           </UCard>
         </div>
@@ -245,7 +275,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     >
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="font-bold text-lg">Current Order</h2>
+          <h2 class="font-bold text-lg">Order</h2>
           <UBadge color="info" variant="subtle" size="lg">{{ totalItems }} items</UBadge>
         </div>
 
@@ -290,7 +320,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
 
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
-            <div class="text-xs text-gray-500">${{ Number(item.product.price ?? 0).toFixed(2) }}</div>
+            <div class="text-xs text-gray-500">{{ khr(item.product.price ?? 0)}}</div>
           </div>
           <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
             <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
@@ -305,17 +335,21 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
           <div class="space-y-1 text-sm">
             <div class="flex justify-between text-gray-500">
               <span>Subtotal</span>
-              <span>${{ subtotal.toFixed(2) }}</span>
+              <span>
+                {{ khr(subtotalKHR) }}
+                <span class="text-xs text-gray-400 ml-1">({{ usd(subtotalUSD) }})</span>
+              </span>
             </div>
+
             <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
-              <span>Tax (8%)</span>
-              <span>${{ tax.toFixed(2) }}</span>
+              <span>Tax (10%)</span>
+              <span>{{ khr(taxKHR) }} ({{ usd(taxUSD) }})</span>
             </div>
           </div>
 
           <div class="flex justify-between font-black text-2xl mb-2">
             <span>Total</span>
-            <span class="text-info-600">${{ total.toFixed(2) }}</span>
+            <span class="text-info-600">{{ khr(totalKHR) }} ({{ usd(totalUSD) }})</span>
           </div>
 
           <UButton
@@ -326,7 +360,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
             :disabled="cart.length === 0"
             @click="handleCheckout"
           >
-            Charge ${{ total.toFixed(2) }}
+            Charge ${{ totalKHR.toFixed(2) }}
           </UButton>
         </div>
       </template>
@@ -338,7 +372,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         <div class="p-6">
           <div class="text-center mb-8">
             <div class="text-gray-500 uppercase text-xs font-bold tracking-widest">Total Amount</div>
-            <div class="text-5xl font-black text-primary-600 mt-1">${{ total.toFixed(2) }}</div>
+            <div class="text-5xl font-black text-primary-600 mt-1">${{ totalKHR.toFixed(2) }}</div>
             <div class="text-sm text-gray-500 mt-2">
               Customer: <span class="font-semibold">{{ selectedCustomerName }}</span>
             </div>
@@ -368,3 +402,15 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     </UModal>
   </div>
 </template>
+
+<style>
+.no-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;    
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;            
+}
+
+</style>
