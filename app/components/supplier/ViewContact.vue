@@ -155,10 +155,6 @@ const columns: TableColumn<SupplierContact>[] = [
             separator: 'h-0'
           }"
         />
-
-        <div v-if="contacts.length === 0" class="text-sm text-muted mt-3">
-          This supplier has no contacts.
-        </div>
       </div>
     </template>
 
