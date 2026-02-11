@@ -74,20 +74,6 @@ const links = [[{
       open.value = false
     }
   }, {
-  label: 'Customers',
-  icon: 'i-lucide-users',
-  to: '/customer',
-  onSelect: () => {
-      open.value = false
-    }
-  }, {
-  label: 'Sales Report',
-  icon: 'i-lucide-file',
-  to: '/sale-report',
-  onSelect: () => {
-      open.value = false
-    }
-  }, {
   label: 'Employees',
   icon: 'i-lucide-user',
   to: '/employee',
