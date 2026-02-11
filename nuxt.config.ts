@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   modules: ["@nuxt/eslint", "@nuxt/ui", "@vueuse/nuxt"],
 
   build: {
-    transpile: ['jwt-decode']
+    transpile: ["jwt-decode"],
   },
 
   css: ["~/assets/css/main.css"],
