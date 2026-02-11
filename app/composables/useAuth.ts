@@ -26,7 +26,7 @@ export const useAuth = () => {
   };
 
   const isExpired = (jwt: string | null) => {
-  if (!jwt || !jwt.includes('.')) return true; // Basic validation
+  if (!jwt || !jwt.includes('.')) return true;
   
   try {
     const base64Payload = jwt.split('.')[1]; 

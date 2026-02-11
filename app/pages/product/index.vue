@@ -123,7 +123,7 @@ const columns: TableColumn<Product>[] = [
         h(UAvatar, {
           src: product.imageUrl || undefined,
           alt: product.name || 'Image',
-          size: 'lg'
+          size: '2xl'
         }),
       ])
     }
