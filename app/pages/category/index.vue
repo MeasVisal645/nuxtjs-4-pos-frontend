@@ -17,7 +17,6 @@ const {
 
 const toast = useToast()
 
-
 const selectedCategory = ref<Category | null>(null)
 const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
@@ -51,7 +50,7 @@ function getRowItems(row: Row<Category>) {
       type: 'separator'
     },
     {
-      label: 'View Product Details',
+      label: 'View Category Details',
       icon: 'i-lucide-list',
       onSelect() {
         selectedCategory.value = row.original
@@ -62,7 +61,7 @@ function getRowItems(row: Row<Category>) {
       type: 'separator'
     },
     {
-      label: 'Edit Product',
+      label: 'Edit Category',
       icon: 'i-lucide-pencil',
       onSelect() {
         selectedId.value = row.original.id
@@ -73,13 +72,13 @@ function getRowItems(row: Row<Category>) {
       type: 'separator'
     },
     {
-      label: 'Delete Product',
+      label: 'Delete Category',
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
         toast.add({
-          title: 'Product deleted',
-          description: 'The product has been deleted.'
+          title: 'Category deleted',
+          description: 'The category has been deleted.'
         })
       }
     }

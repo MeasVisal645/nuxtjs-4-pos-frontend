@@ -97,15 +97,6 @@ const subtotalKHR = computed(() =>
 const taxKHR = computed(() => Math.round(subtotalKHR.value * 0.10))
 const totalKHR = computed(() => subtotalKHR.value + taxKHR.value)
 
-function usd(n: number) {
-  return `$${n.toFixed(2)}`
-}
-
-function khr(n: number) {
-  return `${n.toLocaleString()}៛`
-}
-
-
 const totalItems = computed(() => cart.value.reduce((sum, i) => sum + i.quantity, 0))
 
 const selectedCustomer = computed(() => {
@@ -255,7 +246,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
 
             <div class="font-semibold truncate text-sm">{{ product.name }}</div>
             <div class="text-info-600 dark:text-info-400 font-bold text-sm mt-1">
-              {{ khr(product.price ?? 0) }}
+              {{ KHR(product.price ?? 0) }}
             </div>
           </UCard>
         </div>
@@ -318,7 +309,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
 
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
-            <div class="text-xs text-gray-500">{{ khr(item.product.price ?? 0)}}</div>
+            <div class="text-xs text-gray-500">{{ KHR(item.product.price ?? 0)}}</div>
           </div>
           <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
             <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
@@ -334,20 +325,20 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
             <div class="flex justify-between text-gray-500">
               <span>Subtotal</span>
               <span>
-                {{ khr(subtotalKHR) }}
-                <span class="text-xs text-gray-400 ml-1">({{ usd(subtotalUSD) }})</span>
+                {{ KHR(subtotalKHR) }}
+                <span class="text-xs text-gray-400 ml-1">({{ USD(subtotalUSD) }})</span>
               </span>
             </div>
 
             <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
               <span>Tax (10%)</span>
-              <span>{{ khr(taxKHR) }} ({{ usd(taxUSD) }})</span>
+              <span>{{ KHR(taxKHR) }} ({{ USD(taxUSD) }})</span>
             </div>
           </div>
 
           <div class="flex justify-between font-black text-2xl mb-2">
             <span>Total</span>
-            <span class="text-info-600">{{ khr(totalKHR) }} ({{ usd(totalUSD) }})</span>
+            <span class="text-info-600">{{ KHR(totalKHR) }} ({{ USD(totalUSD) }})</span>
           </div>
 
           <UButton
@@ -370,7 +361,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         <div class="p-6">
           <div class="text-center mb-8">
             <div class="text-gray-500 uppercase text-xs font-bold tracking-widest">Total Amount</div>
-            <div class="text-5xl font-black text-primary-600 mt-1">${{ totalKHR.toFixed(2) }}</div>
+            <div class="text-5xl font-black text-primary-600 mt-1">{{ KHR(totalKHR) }}</div>
             <div class="text-sm text-gray-500 mt-2">
               Customer: <span class="font-semibold">{{ selectedCustomerName }}</span>
             </div>
@@ -389,11 +380,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
               class="h-20 flex-col gap-2"
               @click="confirmPayment('KHQR')"
             />
-          </div>
-
-          <div class="flex gap-2">
-            <UButton label="Cancel" color="info" variant="ghost" class="flex-1" @click="isPaymentModalOpen = false" />
-            <UButton label="Confirm (Cash)" color="primary" class="flex-1 font-bold" @click="confirmPayment('CASH')" />
           </div>
         </div>
       </template>

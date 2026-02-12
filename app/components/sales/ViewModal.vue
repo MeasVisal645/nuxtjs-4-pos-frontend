@@ -1,0 +1,184 @@
+<script setup lang="ts">
+import type { OrderItemDetails, OrderDetails } from '~/types'
+import type { TableColumn } from '@nuxt/ui'
+import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import toArray from '~/utils/helper'
+
+type Customer = { id: number; name: string }
+type Product = { id: number; name: string }
+type User = { id: number; name: string }
+
+const products = ref<Product[]>([])
+const customers = ref<Customer[]>([])
+const users = ref<User[]>([])
+
+async function loadLookups() {
+  const [prodRes, custRes, userRes] = await Promise.all([
+    useApi('/product/all'),
+    useApi('/customer/all'),
+    useApi('/user/all')
+  ])
+
+  products.value = toArray<Product>(prodRes)
+  customers.value = toArray<Customer>(custRes)
+  users.value = toArray<User>(userRes)
+}
+
+onMounted(async () => {
+  try {
+    await loadLookups()
+  } catch (err) {
+    console.error('Failed to load lookups:', err)
+  }
+})
+
+const productNameById = computed<Record<number, string>>(() =>
+  Object.fromEntries(products.value.map(p => [p.id, p.name]))
+)
+
+const customerNameById = computed<Record<number, string>>(() =>
+  Object.fromEntries(customers.value.map(c => [c.id, c.name]))
+)
+
+const userNameById = computed<Record<number, string>>(() =>
+  Object.fromEntries(users.value.map(u => [u.id, u.name]))
+)
+
+const props = defineProps<{
+  open: boolean
+  data: OrderItemDetails | null
+}>()
+
+const emit = defineEmits<{
+  'update:open': [boolean]
+  submitted: []  
+}>()
+
+const UBadge = resolveComponent('UBadge')
+const UButton = resolveComponent('UButton')
+const UDropdownMenu = resolveComponent('UDropdownMenu')
+const UCheckbox = resolveComponent('UCheckbox')
+
+const editModalOpen = ref(false)
+const addModalOpen = ref(false)
+
+const selectedId = ref<string | number | null>(null)
+
+function openAddUser() {
+  selectedId.value = props.data?.orderItems?.id ?? null
+  addModalOpen.value = true
+}
+
+const orderNo = computed(() => props.data?.orderItems?.orderNo ?? '')
+
+const createdDate = computed(() => props.data?.orderItems?.createdDate ?? '')
+
+const details = computed(() => props.data?.orderDetails ?? [])
+
+function getRowItem(row: Row<OrderDetails>) {
+  return [
+    { type: 'label', label: 'Actions' },
+    { type: 'separator' },
+    {
+      label: 'Edit Contact',
+      icon: 'i-lucide-pencil',
+      onSelect() {
+        // do something with row.original (SupplierContact)
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Delete Contact',
+      icon: 'i-lucide-trash',
+      color: 'error',
+      onSelect() {
+        // do something with row.original (SupplierContact)
+      }
+    }
+  ]
+}
+
+const columns: TableColumn<OrderDetails>[] = [
+  {
+    id: 'no',
+    header: 'No',
+    cell: ({ row, table }) => {
+      const pageIndex = table.getState().pagination.pageIndex
+      const pageSize = table.getState().pagination.pageSize
+      return pageIndex * pageSize + row.index + 1
+    }
+  },
+  {
+    id: 'product',
+    header: 'Product',
+    accessorFn: (r) => productNameById.value[r.productId] ?? `#${r.productId}`
+  },
+  {
+    id: 'customer',
+    header: 'Customer',
+    accessorFn: (r) => customerNameById.value[r.customerId] ?? `#${r.customerId}`
+  },
+  {
+    id: 'user',
+    header: 'User',
+    accessorFn: () => userNameById.value[props.data?.orderItems?.userId ?? -1] ?? '-'
+  },
+  { accessorKey: 'quantity', header: 'Quantity' },
+  { accessorKey: 'total', header: 'Total' },
+  { accessorKey: 'paymentMethod', header: 'Payment Method' },
+  
+]
+</script>
+
+<template>
+  <UModal
+    scrollable
+    :open="open"
+    :ui="{ content: 'w-full sm:max-w-7xl' }"
+    @update:open="(v) => emit('update:open', v)"
+  >
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+      
+        <!-- LEFT -->
+        <div>
+          <div class="font-semibold text-lg">Order Details</div>
+          <div class="text-md" v-if="orderNo">
+            Order No: {{ orderNo }}
+          </div>
+            <div class="text-md" v-if="createdDate">
+            Created Date: {{ formatDateTime(createdDate) }}
+            </div>
+        </div>
+
+      </div>
+    </template>
+
+    <template #body>
+      <div v-if="!data" class="text-sm text-muted">
+        No supplier selected.
+      </div>
+
+      <div v-else>
+        <UTable
+          :data="details"
+          :columns="columns"
+          :ui="{
+            base: 'table-fixed border-separate border-spacing-0',
+            thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+            tbody: '[&>tr]:last:[&>td]:border-b-0',
+            th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r text-black dark:text-white',
+            td: 'border-b border-default text-black dark:text-white',
+            separator: 'h-0'
+          }"
+        />
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="text-sm text-muted" v-if="orderNo">
+        Total Records: {{ details.length }}
+      </div>
+    </template>
+  </UModal>
+</template>

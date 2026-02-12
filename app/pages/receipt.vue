@@ -27,17 +27,27 @@ onMounted(() => {
         <p class="text-black">{{ new Date(order.date).toLocaleString() }}</p>
       </div>
 
-      <div class="border-t border-dashed  border-gray-400 py-2 space-y-1">
-        <div v-for="item in order.items" :key="item.name" class="flex justify-between">
+      <div class="py-2 space-y-1">
+        <div class="flex justify-between">
+          <span class="text-black">Quantity</span>
+          <span class="text-black">Name</span>
+          <span class="text-black">Price</span>
+        </div>
+
+        <div v-for="item in order.items" :key="item.name" class="flex justify-between border-t border-dashed border-gray-400">
           <span class="text-black">{{ item.quantity }}x {{ item.name }}</span>
           <span class="text-black">{{ (item.price * item.quantity) }}៛</span>
         </div>
       </div>
 
-      <div class="border-t border-dashed border-gray-400 pt-2 mt-2 space-y-1">
+      <div class=" pt-2 mt-2 space-y-1">
+        <!-- <div class="flex justify-between font-bold text-lg">
+          <span class="text-black">Tax(10%)</span>
+          <span class="text-black">{{ KHR(order.taxKHR) }} <span class="text-black text-xs">({{ USD(order.taxUSD) }})</span></span>
+        </div> -->
         <div class="flex justify-between font-bold text-lg">
           <span class="text-black">TOTAL</span>
-          <span class="text-black">{{ order.totalKHR }}៛</span>
+          <span class="text-black">{{ KHR(order.totalKHR) }} <span class="text-black text-xs">({{ USD(order.totalUSD) }})</span></span>
         </div>
       </div>
 

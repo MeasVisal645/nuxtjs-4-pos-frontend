@@ -43,6 +43,8 @@ export interface Product {
   imageUrl: AvatarProps | null;
 }
 
+export type unit = "PCS" | "KG" | "BOTTLE" | "BOX" | "PACK" | "LITER";
+
 export interface Employee {
   id: number;
   firstName: string;
@@ -134,6 +136,13 @@ type LowStockProduct = {
   quantity: number;
 };
 
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
 
 export interface Notification {
   id: number;
@@ -165,3 +174,28 @@ export interface Range {
   start: Date;
   end: Date;
 }
+
+export interface OrderItems { 
+  id: number;
+  userId: number;
+  orderNo: string;
+  paid: boolean;
+  createdDate: string;
+}
+
+export interface OrderDetails {
+  id: number;
+  orderId: number;
+  productId: number;
+  customerId: number;
+  quantity: number;
+  total: number;
+  paymentMethod: paymentMethod;
+}
+
+export interface OrderItemDetails {
+  orderItems: OrderItems;
+  orderDetails: OrderDetails[];
+}
+
+export type paymentMethod = "CASH" | "KHQR";
