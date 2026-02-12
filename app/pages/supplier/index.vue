@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { Supplier, SupplierWithContacts, SupplierContact } from '~/types'
+import type { Supplier, SupplierWithContacts } from '~/types'
 
 const {
   fetchPagination,
