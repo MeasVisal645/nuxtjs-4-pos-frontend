@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.10.0",
+    "@nuxt/image": "^2.0.0",
     "@types/node": "^25.0.10",
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",

@@ -1,16 +1,16 @@
 export function formatDateTime(date?: string | Date) {
   if (!date) return ''
 
-  return new Date(date).toLocaleString('en-GB', {
+  return new Date(date).toLocaleString('en-US', {
     year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: false
+    second: '2-digit',
+    hour12: true
   })
 }
-
 // Date only
 export function formatDate(date?: string | Date) {
   if (!date) return ''
@@ -28,3 +28,6 @@ export function formatTime(date?: string | Date) {
     hour12: false
   })
 }
+
+
+
