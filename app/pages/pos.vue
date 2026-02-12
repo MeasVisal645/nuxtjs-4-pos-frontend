@@ -85,8 +85,6 @@ const filteredProducts = computed(() => {
 const subtotalCents = computed(() =>
   cart.value.reduce((sum, item) => sum + Math.round(Number(item.product.price ?? 0) * 100) * item.quantity, 0)
 )
-const totalCents = computed(() => subtotalCents.value + taxUSD.value)
-
 const subtotalUSD = computed(() => subtotalKHR.value / KHR_RATE)
 const taxUSD = computed(() => taxKHR.value / KHR_RATE)
 const totalUSD = computed(() => totalKHR.value / KHR_RATE)

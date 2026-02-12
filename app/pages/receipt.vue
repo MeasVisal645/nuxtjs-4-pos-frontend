@@ -23,21 +23,21 @@ onMounted(() => {
   <div class="max-w-75 mx-auto p-4 text-black font-mono text-sm bg-white min-h-screen">
     <div v-if="order">
       <div class="text-center mb-4">
-        <h1 class="font-bold text-lg uppercase text-black">Store Receipt</h1>
+        <h1 class="font-bold text-lg uppercase text-black">Coffee Receipt</h1>
         <p class="text-black">{{ new Date(order.date).toLocaleString() }}</p>
       </div>
 
       <div class="border-t border-dashed  border-gray-400 py-2 space-y-1">
         <div v-for="item in order.items" :key="item.name" class="flex justify-between">
           <span class="text-black">{{ item.quantity }}x {{ item.name }}</span>
-          <span class="text-black">${{ (item.price * item.quantity).toFixed(2) }}</span>
+          <span class="text-black">{{ (item.price * item.quantity) }}៛</span>
         </div>
       </div>
 
       <div class="border-t border-dashed border-gray-400 pt-2 mt-2 space-y-1">
         <div class="flex justify-between font-bold text-lg">
           <span class="text-black">TOTAL</span>
-          <span class="text-black">${{ order.total.toFixed(2) }}</span>
+          <span class="text-black">{{ order.totalKHR }}៛</span>
         </div>
       </div>
 
