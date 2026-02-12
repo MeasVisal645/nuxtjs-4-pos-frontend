@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { KHR, USD } from '~/utils/currency';
 import toArray from '~/utils/helper'
 
 definePageMeta({ layout: 'blank' })
