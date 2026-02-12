@@ -37,7 +37,7 @@ onMounted(() => {
       <div class="border-t border-dashed border-gray-400 pt-2 mt-2 space-y-1">
         <div class="flex justify-between font-bold text-lg">
           <span class="text-black">TOTAL</span>
-          <span class="text-black">{{ order.totalKHR }}៛</span>
+          <span class="text-black">{{ order.totalKHR }}៛ <span class="text-black text-xs">({{ order.totalUSD.toFixed(2) }}$)</span></span>
         </div>
       </div>
 

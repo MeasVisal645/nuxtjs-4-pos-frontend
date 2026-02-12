@@ -370,7 +370,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         <div class="p-6">
           <div class="text-center mb-8">
             <div class="text-gray-500 uppercase text-xs font-bold tracking-widest">Total Amount</div>
-            <div class="text-5xl font-black text-primary-600 mt-1">${{ totalKHR.toFixed(2) }}</div>
+            <div class="text-5xl font-black text-primary-600 mt-1">{{ khr(totalKHR) }}</div>
             <div class="text-sm text-gray-500 mt-2">
               Customer: <span class="font-semibold">{{ selectedCustomerName }}</span>
             </div>
@@ -389,11 +389,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
               class="h-20 flex-col gap-2"
               @click="confirmPayment('KHQR')"
             />
-          </div>
-
-          <div class="flex gap-2">
-            <UButton label="Cancel" color="info" variant="ghost" class="flex-1" @click="isPaymentModalOpen = false" />
-            <UButton label="Confirm (Cash)" color="primary" class="flex-1 font-bold" @click="confirmPayment('CASH')" />
           </div>
         </div>
       </template>
