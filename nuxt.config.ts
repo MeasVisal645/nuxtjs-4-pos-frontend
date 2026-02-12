@@ -1,8 +1,10 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
-  modules: ["@nuxt/eslint", "@nuxt/ui", "@vueuse/nuxt"],
-
+  modules: ["@nuxt/eslint", "@nuxt/ui", "@vueuse/nuxt", '@nuxt/image'],
+  image: {
+    domains: process.env.IMG_BASE_URL ? [ process.env.IMG_BASE_URL ] : [],
+  },
   build: {
     transpile: ["jwt-decode"],
   },

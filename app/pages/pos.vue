@@ -5,10 +5,12 @@ definePageMeta({ layout: 'blank' })
 
 type Customer = { id: number; name: string }
 type Category = { id: number; name: string }
+type User = { id: number; username?: string }
 
 // ---------- State ----------
 const products = ref<any[]>([])
 const categories = ref<Category[]>([])
+const users = ref<User[]>([])
 const searchQuery = ref('')
 const categoryNames = ref<string[]>(['All'])
 const selectedCategory = ref('All')
@@ -34,6 +36,12 @@ async function loadCustomers() {
   }
 }
 
+const currentUser = ref<User | null>(null)
+
+async function loadCurrentUser() {
+  currentUser.value = await useApi('/user/me')
+}
+
 
 async function loadProductsAndCategories() {
   const [prodRes, catRes] = await Promise.all([
@@ -53,7 +61,11 @@ async function loadProductsAndCategories() {
 
 onMounted(async () => {
   try {
-    await Promise.all([loadProductsAndCategories(), loadCustomers()])
+    await Promise.all([
+      loadProductsAndCategories(),
+      loadCustomers(),
+      loadCurrentUser()
+    ])
   } catch (err) {
     console.error('Failed to sync POS data:', err)
   }
@@ -137,7 +149,23 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       return
     }
 
+    const body = cart.value.map(i => ({
+      code: i.product.code,
+      quantity: i.quantity,
+      customerId,
+      paymentMethod: method
+    }))
+
+    const created = await useApi<{ orderNo: string; userId: number; id?: number }>(
+      '/order/create',
+      { method: 'POST', body }
+    )
+    console.log('created order:', created)
+
+
     const receiptData = {
+      orderNo: created?.orderNo ?? '',
+      username: currentUser.value?.username,
       customerId,
       customerName: selectedCustomerName.value,
       items: cart.value.map(i => ({
@@ -147,21 +175,13 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       })),
       totalKHR: totalKHR.value,
       totalUSD: totalUSD.value,
-      tax: taxUSD.value,
+      taxKHR: taxKHR.value,
+      taxUSD: taxUSD.value,
       subtotalKHR: subtotalKHR.value,
       subtotalUSD: subtotalUSD.value,
       date: new Date().toISOString(),
       paymentMethod: method
     }
-
-    const body = cart.value.map(i => ({
-      code: i.product.code,
-      quantity: i.quantity,
-      customerId,
-      paymentMethod: method
-    }))
-
-    await useApi('/order/create', { method: 'POST', body })
 
     isPaymentModalOpen.value = false
     cart.value = []
@@ -175,6 +195,8 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     alert('Payment failed')
   }
 }
+
+
 </script>
 
 <template>
