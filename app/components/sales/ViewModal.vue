@@ -1,27 +1,22 @@
 <script setup lang="ts">
 import type { OrderItemDetails, OrderDetails } from '~/types'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import toArray from '~/utils/helper'
 
 type Customer = { id: number; name: string }
 type Product = { id: number; name: string }
-type User = { id: number; name: string }
 
 const products = ref<Product[]>([])
 const customers = ref<Customer[]>([])
-const users = ref<User[]>([])
 
 async function loadLookups() {
-  const [prodRes, custRes, userRes] = await Promise.all([
+  const [prodRes, custRes] = await Promise.all([
     useApi('/product/all'),
-    useApi('/customer/all'),
-    useApi('/user/all')
+    useApi('/customer/all')
   ])
 
   products.value = toArray<Product>(prodRes)
   customers.value = toArray<Customer>(custRes)
-  users.value = toArray<User>(userRes)
 }
 
 onMounted(async () => {
@@ -40,10 +35,6 @@ const customerNameById = computed<Record<number, string>>(() =>
   Object.fromEntries(customers.value.map(c => [c.id, c.name]))
 )
 
-const userNameById = computed<Record<number, string>>(() =>
-  Object.fromEntries(users.value.map(u => [u.id, u.name]))
-)
-
 const props = defineProps<{
   open: boolean
   data: OrderItemDetails | null
@@ -51,43 +42,40 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [boolean]
-  submitted: []  
+  submitted: []
 }>()
 
-const UBadge = resolveComponent('UBadge')
+// ---- derived from props ----
+const details = computed<OrderDetails[]>(() => props.data?.orderDetails ?? [])
 
 const orderNo = computed(() => props.data?.orderItems?.orderNo ?? '')
 const createdDate = computed(() => props.data?.orderItems?.createdDate ?? '')
-const details = computed(() => props.data?.orderDetails ?? [])
+
+// take from first detail row (assuming all details share same customer/payment)
+const firstDetail = computed(() => details.value[0] ?? null)
+
+const customerId = computed(() => firstDetail.value?.customerId ?? null)
+const paymentMethod = computed(() => firstDetail.value?.paymentMethod ?? '')
+
+const customerName = computed(() => {
+  const id = customerId.value
+  if (id == null) return ''
+  return customerNameById.value[id] ?? `#${id}`
+})
 
 const columns: TableColumn<OrderDetails>[] = [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
-    }
+    cell: ({ row }) => row.index + 1
   },
   {
     id: 'product',
     header: 'Product',
     accessorFn: (r) => productNameById.value[r.productId] ?? `#${r.productId}`
   },
-  {
-    id: 'customer',
-    header: 'Customer',
-    accessorFn: (r) => customerNameById.value[r.customerId] ?? `#${r.customerId}`
-  },
-  {
-    id: 'user',
-    header: 'Sale By',
-    accessorFn: () => userNameById.value[props.data?.orderItems?.userId ?? -1] ?? '-'
-  },
   { accessorKey: 'quantity', header: 'Quantity' },
-  { accessorKey: 'total', header: 'Total' },
-  { accessorKey: 'paymentMethod', header: 'Payment Method' },
+  { accessorKey: 'total', header: 'Total' }
 ]
 </script>
 
@@ -100,24 +88,31 @@ const columns: TableColumn<OrderDetails>[] = [
   >
     <template #header>
       <div class="flex items-center justify-between w-full">
-      
-        <!-- LEFT -->
         <div>
           <div class="font-semibold text-lg">Order Details</div>
+
           <div class="text-md" v-if="orderNo">
             Order No: {{ orderNo }}
           </div>
-            <div class="text-md" v-if="createdDate">
-            Created Date: {{ formatDateTime(createdDate) }}
-            </div>
-        </div>
 
+          <div class="text-md" v-if="createdDate">
+            Created Date: {{ formatDateTime(createdDate) }}
+          </div>
+
+          <div class="text-md" v-if="customerName">
+            Customer: {{ customerName }}
+          </div>
+
+          <div class="text-md" v-if="paymentMethod">
+            Payment Method: {{ paymentMethod }}
+          </div>
+        </div>
       </div>
     </template>
 
     <template #body>
       <div v-if="!data" class="text-sm text-muted">
-        No supplier selected.
+        No order selected.
       </div>
 
       <div v-else>
