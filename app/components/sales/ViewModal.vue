@@ -55,48 +55,10 @@ const emit = defineEmits<{
 }>()
 
 const UBadge = resolveComponent('UBadge')
-const UButton = resolveComponent('UButton')
-const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
-
-const editModalOpen = ref(false)
-const addModalOpen = ref(false)
-
-const selectedId = ref<string | number | null>(null)
-
-function openAddUser() {
-  selectedId.value = props.data?.orderItems?.id ?? null
-  addModalOpen.value = true
-}
 
 const orderNo = computed(() => props.data?.orderItems?.orderNo ?? '')
-
 const createdDate = computed(() => props.data?.orderItems?.createdDate ?? '')
-
 const details = computed(() => props.data?.orderDetails ?? [])
-
-function getRowItem(row: Row<OrderDetails>) {
-  return [
-    { type: 'label', label: 'Actions' },
-    { type: 'separator' },
-    {
-      label: 'Edit Contact',
-      icon: 'i-lucide-pencil',
-      onSelect() {
-        // do something with row.original (SupplierContact)
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Delete Contact',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        // do something with row.original (SupplierContact)
-      }
-    }
-  ]
-}
 
 const columns: TableColumn<OrderDetails>[] = [
   {
@@ -120,13 +82,12 @@ const columns: TableColumn<OrderDetails>[] = [
   },
   {
     id: 'user',
-    header: 'User',
+    header: 'Sale By',
     accessorFn: () => userNameById.value[props.data?.orderItems?.userId ?? -1] ?? '-'
   },
   { accessorKey: 'quantity', header: 'Quantity' },
   { accessorKey: 'total', header: 'Total' },
   { accessorKey: 'paymentMethod', header: 'Payment Method' },
-  
 ]
 </script>
 
