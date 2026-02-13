@@ -31,23 +31,30 @@ export function useProduct() {
 
   async function fetchPagination() {
     try {
-      pending.value = true;
-      loadError.value = null;
+      pending.value = true
+      loadError.value = null
 
       const res = await useApi<PageResponse<Product>>(
-        `/product?pageNumber=${pageNumber.value}`,
-      );
+        `/product?pageNumber=${pageNumber.value}`
+      )
 
-      products.value = res.content;
-      totalRecords.value = res.totalRecords;
-      totalPages.value = res.totalPages;
+      products.value = res.content ?? []
+      totalRecords.value = res.totalRecords ?? 0
+      totalPages.value = res.totalPages ?? 0
+
+      // keep in sync (optional but good)
+      pageNumber.value = res.pageNumber ?? pageNumber.value
+      pageSize.value = res.pageSize ?? pageSize.value
     } catch (e) {
-      loadError.value = e;
-      products.value = [];
+      loadError.value = e
+      products.value = []
+      totalRecords.value = 0
+      totalPages.value = 0
     } finally {
-      pending.value = false;
+      pending.value = false
     }
   }
+
 
   onMounted(fetchPagination);
   watch([pageNumber, pageSize], fetchPagination);
