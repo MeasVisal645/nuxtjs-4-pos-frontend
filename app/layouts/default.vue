@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const accessDeniedOpen = useState('accessDeniedOpen', () => false)
-const accessDeniedMsg = useState('accessDeniedMsg', () => 'Admin only.')
 const toast = useToast()
 const open = ref(false)
 
@@ -177,6 +175,27 @@ const groups = computed(() => [{
 //     }]
 //   })
 // })
+
+const expiredModalOpen = useState<boolean>('auth:expiredModalOpen', () => false)
+const expiredReason = useState<string>('auth:expiredReason', () => 'Your session has expired. Please login again.')
+
+const token = useCookie<string | null>('token', {
+  default: () => null,
+  sameSite: 'lax'
+})
+
+const goLogin = async () => {
+  token.value = null
+  expiredModalOpen.value = false
+  await navigateTo('/signin', { replace: true })
+}
+
+// const onExpiredModalClose = async () => {
+//   await goLogin()
+// }
+
+
+
 </script>
 
 <template>
@@ -207,13 +226,6 @@ const groups = computed(() => [{
           tooltip
           class="mt-auto"
         />
-
-        <!-- <AccessDeniedModal
-          v-model:open="accessDeniedOpen"
-          title="Access denied"
-          :message="accessDeniedMsg"
-        /> -->
-
       </template>
 
       <template #footer="{ collapsed }">
@@ -224,6 +236,25 @@ const groups = computed(() => [{
     <UDashboardSearch :groups="groups" />
 
       <slot />
+
+      <UModal v-model:open="expiredModalOpen" :prevent-close="true">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="font-semibold">Session expired</div>
+          </div>
+        </template>
+
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+          {{ expiredReason }}
+        </p>
+
+        <template #footer>
+          <div class="flex justify-end">
+            <UButton color="primary" @click="goLogin">Login</UButton>
+          </div>
+        </template>
+      </UModal>
+
 
     <NotificationsSlideover />
 

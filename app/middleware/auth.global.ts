@@ -2,13 +2,13 @@ import { jwtDecode } from "jwt-decode";
 
 type JwtPayload = {
   exp: number;
-  role?: string;   
-  roles?: string[];  
-  authorities?: string[]; 
+  role?: string;
+  roles?: string[];
+  authorities?: string[];
 };
 
 export default defineNuxtRouteMiddleware((to) => {
-const toast = useToast()
+  const toast = useToast();
 
   const token = useCookie<string | null>("token", {
     default: () => null,
@@ -17,14 +17,27 @@ const toast = useToast()
 
   const publicRoutes = ["/signin", "/terms", "/privacy"];
 
+  // Global state for the modal
+  const expiredModalOpen = useState<boolean>("auth:expiredModalOpen", () => false);
+  const expiredReason = useState<string>("auth:expiredReason", () => "");
+
   const logout = () => {
     token.value = null;
-    return navigateTo("/signin", { replace: true });
+    // open modal (only once)
+    expiredReason.value = "Your session has expired. Please login again.";
+    expiredModalOpen.value = true;
+
+    // allow navigation to continue; the modal will redirect from UI
+    // BUT if user is on protected route, we can still prevent it:
+    if (!publicRoutes.includes(to.path)) return abortNavigation();
   };
 
   // Not logged in
   if (!token.value) {
-    if (!publicRoutes.includes(to.path)) return logout();
+    if (!publicRoutes.includes(to.path)) {
+      // no token is a login-required case (you can reuse same modal or just redirect)
+      return navigateTo("/signin", { replace: true });
+    }
     return;
   }
 
@@ -32,7 +45,8 @@ const toast = useToast()
   let payload: JwtPayload;
   try {
     payload = jwtDecode<JwtPayload>(token.value);
-  } catch {
+  } catch (err) {
+    console.error("Failed to decode JWT token:", err);
     return logout();
   }
 
@@ -54,17 +68,15 @@ const toast = useToast()
       payload.authorities?.includes("ROLE_ADMIN");
 
     if (!isAdmin) {
-      // Use alert (simple). If you prefer toast, see below.
       toast.add({
-        title: 'Access denied',
-        description: 'Insufficient Privileges!',
-        color: 'error'
-      })
+        title: "Access denied",
+        description: "Insufficient Privileges!",
+        color: "error",
+      });
       return navigateTo("/", { replace: true });
     }
   }
 
-  // Already logged in, prevent going to signin
   if (to.path === "/signin") {
     return navigateTo("/", { replace: true });
   }
