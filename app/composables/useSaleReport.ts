@@ -30,14 +30,13 @@ export function useSaleReport() {
       loadError.value = null;
 
       const res = await useApi<PageResponse<OrderItemDetails>>(
-        `/order?pageNumber=${pageNumber.value}`,
+        `/order?pageNumber=${pageNumber.value}&pageSize=${pageSize.value}`,
       );
 
       orderItems.value = res.content ?? [];
       totalRecords.value = res.totalRecords ?? 0;
       totalPages.value = res.totalPages ?? 0;
 
-      // keep these in sync if backend returns them
       pageNumber.value = res.pageNumber ?? pageNumber.value;
       pageSize.value = res.pageSize ?? pageSize.value;
     } catch (e) {

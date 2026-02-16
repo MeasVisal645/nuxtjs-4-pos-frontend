@@ -42,11 +42,8 @@ function bucketKey(date: Date, period: Period) {
 }
 
 function bucketStart(date: Date, period: Period) {
-  // Generate canonical bucket start dates that match eachXOfInterval below
   if (period === 'daily') return new Date(date.getFullYear(), date.getMonth(), date.getDate())
   if (period === 'weekly') {
-    // date-fns eachWeekOfInterval gives week starts (default Sunday unless options).
-    // We'll rely on eachWeekOfInterval output as the canonical bucket start.
     return date
   }
   return new Date(date.getFullYear(), date.getMonth(), 1)
@@ -56,7 +53,6 @@ async function loadRevenue() {
   try {
     pending.value = true
 
-    // Build ISO strings WITHOUT newline/spaces
     const start = props.range.start.toISOString()
     const end = props.range.end.toISOString()
 
@@ -85,7 +81,7 @@ async function loadRevenue() {
       sums.set(key, (sums.get(key) ?? 0) + item.amount)
     }
 
-    // 3) Output chart data (fill missing buckets with 0)
+    // 3) Output chart data
     data.value = buckets.map(d => ({
       date: d,
       amount: sums.get(bucketKey(d, props.period)) ?? 0

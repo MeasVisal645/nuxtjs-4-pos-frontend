@@ -17,38 +17,30 @@ function formatCurrency(value: number): string {
 const baseStats = [{
   title: 'Customers',
   icon: 'i-lucide-users',
-  minValue: 400,
-  maxValue: 1000,
-  minVariation: -15,
-  maxVariation: 25
+  value: 400,
+  variation: -15,
 }, {
   title: 'Conversions',
   icon: 'i-lucide-chart-pie',
-  minValue: 1000,
-  maxValue: 2000,
-  minVariation: -10,
-  maxVariation: 20
+  value: 1000,
+  variation: -10,
 }, {
   title: 'Revenue',
   icon: 'i-lucide-circle-dollar-sign',
-  minValue: 200000,
-  maxValue: 500000,
-  minVariation: -20,
-  maxVariation: 30,
+  value: 200000,
+  variation: -20,
   formatter: formatCurrency
 }, {
   title: 'Orders',
   icon: 'i-lucide-shopping-cart',
-  minValue: 100,
-  maxValue: 300,
-  minVariation: -5,
-  maxVariation: 15
+  value: 100,
+  variation: -5,
 }]
 
 const { data: stats } = await useAsyncData<Stat[]>('stats', async () => {
   return baseStats.map((stat) => {
-    const value = randomInt(stat.minValue, stat.maxValue)
-    const variation = randomInt(stat.minVariation, stat.maxVariation)
+    const value = stat.value
+    const variation = stat.variation
 
     return {
       title: stat.title,
