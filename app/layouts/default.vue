@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const accessDeniedOpen = useState('accessDeniedOpen', () => false)
-const accessDeniedMsg = useState('accessDeniedMsg', () => 'Admin only.')
 const toast = useToast()
 const open = ref(false)
 
@@ -192,7 +190,6 @@ const goLogin = async () => {
   await navigateTo('/signin', { replace: true })
 }
 
-// If user clicks X (or if you allow outside close), still force login:
 // const onExpiredModalClose = async () => {
 //   await goLogin()
 // }
