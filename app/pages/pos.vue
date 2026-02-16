@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useInfiniteScroll } from '@vueuse/core'
+import { KHR, USD } from '~/utils/currency'
 import toArray from '~/utils/helper'
 
 definePageMeta({ layout: 'blank' })
@@ -10,17 +12,26 @@ type User = { id: number; username?: string }
 // ---------- State ----------
 const products = ref<any[]>([])
 const categories = ref<Category[]>([])
-const users = ref<User[]>([])
 const searchQuery = ref('')
 const categoryNames = ref<string[]>(['All'])
 const selectedCategory = ref('All')
+
 const cart = ref<{ product: any; quantity: number }[]>([])
 const isPaymentModalOpen = ref(false)
+
 const KHR_RATE = 4100
 
 const customers = ref<Customer[]>([])
 const customerItems = ref<{ label: string; value: number }[]>([])
 const selectedCustomerId = ref<number | undefined>(undefined)
+
+const currentUser = ref<User | null>(null)
+
+// ---------- Infinite scroll (client-side) ----------
+const visibleCount = ref(30)
+const STEP = 30
+const loadingMore = ref(false)
+const productScroll = ref<HTMLElement | null>(null)
 
 // ---------- Loaders ----------
 async function loadCustomers() {
@@ -30,18 +41,15 @@ async function loadCustomers() {
   customers.value = list
   customerItems.value = list.map(c => ({ label: c.name, value: c.id }))
 
-  const first = list.at(0) // Customer | undefined
+  const first = list.at(0)
   if (selectedCustomerId.value === undefined && first) {
     selectedCustomerId.value = first.id
   }
 }
 
-const currentUser = ref<User | null>(null)
-
 async function loadCurrentUser() {
   currentUser.value = await useApi('/user/me')
 }
-
 
 async function loadProductsAndCategories() {
   const [prodRes, catRes] = await Promise.all([
@@ -55,8 +63,6 @@ async function loadProductsAndCategories() {
   products.value = prodList
   categories.value = catList as Category[]
   categoryNames.value = ['All', ...catList.map((c: any) => c.name).filter(Boolean)]
-
-
 }
 
 onMounted(async () => {
@@ -66,49 +72,89 @@ onMounted(async () => {
       loadCustomers(),
       loadCurrentUser()
     ])
+
+    // Setup infinite scroll AFTER data loaded
+    useInfiniteScroll(
+      productScroll,
+      async () => {
+        if (loadingMore.value) return
+        if (visibleCount.value >= filteredAllProducts.value.length) return
+
+        loadingMore.value = true
+        await new Promise(r => setTimeout(r, 120)) // small delay so loading bar is visible
+        visibleCount.value += STEP
+        loadingMore.value = false
+      },
+      { distance: 250 }
+    )
   } catch (err) {
     console.error('Failed to sync POS data:', err)
   }
 })
 
-// ---------- Derived ----------
-const filteredProducts = computed(() => {
+// ---------- Helpers (imageUrl can be string or AvatarProps-like object) ----------
+function imgSrc(p: any): string | null {
+  const v = p?.imageUrl
+  if (!v) return null
+  if (typeof v === 'string') return v
+  if (typeof v === 'object' && v.src) return v.src
+  return null
+}
+
+// ---------- Derived: filtering ----------
+const filteredAllProducts = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
 
-  const selectedCat = categories.value.find(
-    c => c.name === selectedCategory.value
-  )
+  const selectedCatId =
+    selectedCategory.value === 'All'
+      ? null
+      : categories.value.find(c => c.name === selectedCategory.value)?.id ?? null
 
   return products.value.filter((p) => {
     const name = String(p?.name ?? '').toLowerCase()
     const code = String(p?.code ?? '').toLowerCase()
 
     const matchesSearch = !query || name.includes(query) || code.includes(query)
-
-    const matchesCategory =
-      selectedCategory.value === 'All' ||
-      p.categoryId === selectedCat?.id
+    const matchesCategory = selectedCatId === null || Number(p.categoryId) === Number(selectedCatId)
 
     return matchesSearch && matchesCategory
   })
 })
 
+const filteredProducts = computed(() => {
+  return filteredAllProducts.value.slice(0, visibleCount.value)
+})
+
+// reset visible when filters change
+watch([searchQuery, selectedCategory], () => {
+  visibleCount.value = 30
+})
+
+// ---------- Stock helpers ----------
+function cartQtyFor(productId: number) {
+  return cart.value.find(i => i.product.id === productId)?.quantity ?? 0
+}
+
+function remainingStock(p: any) {
+  const stock = Number(p?.quantity ?? 0)
+  return stock - cartQtyFor(p.id)
+}
+
+function isOutOfStock(p: any) {
+  return remainingStock(p) <= 0
+}
+
 // ---------- Calculate Total ----------
-const subtotalCents = computed(() =>
-  cart.value.reduce((sum, item) => sum + Math.round(Number(item.product.price ?? 0) * 100) * item.quantity, 0)
-)
 const subtotalUSD = computed(() => subtotalKHR.value / KHR_RATE)
 const taxUSD = computed(() => taxKHR.value / KHR_RATE)
 const totalUSD = computed(() => totalKHR.value / KHR_RATE)
 
-// ---------- Currency helpers ----------
 const subtotalKHR = computed(() =>
   cart.value.reduce((sum, item) => sum + Number(item.product.price ?? 0) * item.quantity, 0)
 )
 
 const taxKHR = computed(() => Math.round(subtotalKHR.value * 0.10))
 const totalKHR = computed(() => subtotalKHR.value + taxKHR.value)
-
 const totalItems = computed(() => cart.value.reduce((sum, i) => sum + i.quantity, 0))
 
 const selectedCustomer = computed(() => {
@@ -121,6 +167,9 @@ const selectedCustomerName = computed(() => selectedCustomer.value?.name ?? 'Wal
 
 // ---------- Cart Actions ----------
 function addToCart(product: any) {
+  // only allow if remaining stock >= 1
+  if (isOutOfStock(product)) return
+
   const existing = cart.value.find(i => i.product.id === product.id)
   if (existing) existing.quantity++
   else cart.value.push({ product, quantity: 1 })
@@ -160,12 +209,10 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       '/order/create',
       { method: 'POST', body }
     )
-    console.log('created order:', created)
-
 
     const receiptData = {
       orderNo: created?.orderNo ?? '',
-      username: currentUser.value?.username,
+      username: currentUser.value?.username ?? '',
       customerId,
       customerName: selectedCustomerName.value,
       items: cart.value.map(i => ({
@@ -195,8 +242,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     alert('Payment failed')
   }
 }
-
-
 </script>
 
 <template>
@@ -240,38 +285,53 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         </div>
       </div>
 
-
-      <!-- Products Grid -->
-      <div class="flex-1 overflow-y-auto p-2">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-4">
+      <!-- Products Grid + Infinite Scroll -->
+      <div ref="productScroll" class="flex-1 overflow-y-auto p-2 no-scrollbar relative">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-10">
           <UCard
             v-for="product in filteredProducts"
             :key="product.id"
-            class="cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all active:scale-95"
+            class="transition-all active:scale-95"
+            :class="[
+              isOutOfStock(product)
+                ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/30 cursor-not-allowed opacity-80'
+                : 'cursor-pointer hover:ring-2 hover:ring-primary-500'
+            ]"
             :ui="{ body: 'p-3' }"
-            @click="addToCart(product)"
+            @click="!isOutOfStock(product) && addToCart(product)"
           >
             <div class="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mb-3 overflow-hidden">
               <img
-                v-if="product.imageUrl"
-                :src="product.imageUrl"
+                v-if="imgSrc(product)"
+                :src="imgSrc(product)!"
                 :alt="product.name"
                 class="w-full h-full object-contain p-2"
                 loading="lazy"
               />
-              <UIcon
-                v-else
-                name="i-lucide-package"
-                class="w-12 h-12 text-gray-400"
-              />
+              <UIcon v-else name="i-lucide-package" class="w-12 h-12 text-gray-400" />
             </div>
 
             <div class="font-semibold truncate text-sm">{{ product.name }}</div>
-            <div class="text-info-600 dark:text-info-400 font-bold text-sm mt-1">
-              {{ KHR(product.price ?? 0) }}
+
+            <div class="flex items-center justify-between mt-1">
+              <div class="text-info-600 dark:text-info-400 font-bold text-sm">
+                {{ KHR(product.price ?? 0) }}
+              </div>
+
+              <div class="text-[11px]" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
+                Stock: {{ product.quantity ?? 0 }}
+              </div>
             </div>
           </UCard>
         </div>
+
+        <UProgress
+          v-if="loadingMore"
+          indeterminate
+          size="xs"
+          class="sticky bottom-0 inset-x-0 z-10"
+          :ui="{ base: 'bg-default' }"
+        />
       </div>
     </div>
 
@@ -301,7 +361,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       </template>
 
       <!-- Cart Items -->
-      <div class="flex-1 overflow-y-auto space-y-4">
+      <div class="flex-1 overflow-y-auto space-y-4 no-scrollbar p-2">
         <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400 space-y-2 opacity-60">
           <UIcon name="i-lucide-shopping-cart" class="w-16 h-16" />
           <p class="font-medium">No items added</p>
@@ -315,28 +375,31 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         >
           <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
             <img
-              v-if="item.product.imageUrl"
-              :src="item.product.imageUrl"
+              v-if="imgSrc(item.product)"
+              :src="imgSrc(item.product)!"
               :alt="item.product.name"
               class="w-full h-full object-contain p-2"
               loading="lazy"
             />
-            <UIcon
-              v-else
-              name="i-lucide-package"
-              class="w-6 h-6 text-gray-400"
-            />
+            <UIcon v-else name="i-lucide-package" class="w-6 h-6 text-gray-400" />
           </div>
-
 
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
-            <div class="text-xs text-gray-500">{{ KHR(item.product.price ?? 0)}}</div>
+            <div class="text-xs text-gray-500">{{ KHR(item.product.price ?? 0) }}</div>
           </div>
+
           <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
             <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
             <span class="w-6 text-center text-xs font-bold">{{ item.quantity }}</span>
-            <UButton icon="i-lucide-plus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, 1)" />
+            <UButton
+              icon="i-lucide-plus"
+              color="info"
+              variant="ghost"
+              size="xs"
+              :disabled="item.quantity >= Number(item.product.quantity ?? 0)"
+              @click.stop="updateQuantity(idx, 1)"
+            />
           </div>
         </div>
       </div>
@@ -411,12 +474,10 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
 
 <style>
 .no-scrollbar {
-  -ms-overflow-style: none; 
-  scrollbar-width: none;    
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
 .no-scrollbar::-webkit-scrollbar {
-  display: none;            
+  display: none;
 }
-
 </style>

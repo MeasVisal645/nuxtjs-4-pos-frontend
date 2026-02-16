@@ -232,7 +232,6 @@ watch(globalFilter, (value) => {
         </template>
 
         <template #right>
-          <!-- <EmployeeAddModal @submitted="fetchPagination" /> -->
           <EmployeeAddModal 
             @submitted="fetchPagination"
           />

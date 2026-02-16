@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const route = useRoute()
+const accessDeniedOpen = useState('accessDeniedOpen', () => false)
+const accessDeniedMsg = useState('accessDeniedMsg', () => 'Admin only.')
 const toast = useToast()
 const open = ref(false)
 
@@ -206,6 +207,12 @@ const groups = computed(() => [{
           tooltip
           class="mt-auto"
         />
+
+        <!-- <AccessDeniedModal
+          v-model:open="accessDeniedOpen"
+          title="Access denied"
+          :message="accessDeniedMsg"
+        /> -->
 
       </template>
 

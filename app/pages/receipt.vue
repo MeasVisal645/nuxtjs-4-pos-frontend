@@ -28,6 +28,14 @@ const print = () => {
   <div class="max-w-75 mx-auto p-4 text-black font-mono text-sm bg-white min-h-screen">
     <div v-if="order">
       <div class="text-center mb-4">
+        <div class="flex justify-center gap-2 print:hidden">
+          <UButton variant="outline" color="success" icon="i-heroicons-printer" @click="print">
+            Print
+          </UButton>
+          <UButton to="/pos" variant="outline" icon="i-heroicons-arrow-left" color="info">
+            Back
+          </UButton>
+        </div>
         <NuxtImg
           src="https://cdn.my-pos-sys.store/Logo%20400x400.png"
           width="150px"
@@ -39,7 +47,7 @@ const print = () => {
       </div>
 
       <div>
-        <p class="text-black">Order No: {{ order.orderNo }}</p>
+        <!-- <p class="text-black">Order No: {{ order.orderNo }}</p> -->
         <p class="text-black">Customer: {{ order.customerName }}</p>
         <p class="text-black">Payment Method: {{ order.paymentMethod }}</p>
         <p class="text-black">Sale By: {{ order.username }}</p>
@@ -52,7 +60,7 @@ const print = () => {
           <span class="text-black">Price</span>
         </div>
 
-        <div v-for="item in order.items" :key="item.name" class="flex justify-between border-t border-dashed border-gray-400">
+        <div v-for="item in order.items" :key="item.name" class="flex justify-between border-t border-dashed py-2 border-gray-400">
           <span class="text-black">{{ item.name }} {{ item.quantity }} </span>
           <span class="text-black">{{ (item.price * item.quantity) }}៛</span>
         </div>
@@ -71,14 +79,6 @@ const print = () => {
 
       <div class="text-center mt-8">
         <p class="text-black">Thank you for your visit!</p>
-      </div>
-      <div class="flex justify-center gap-2 print:hidden">
-        <UButton variant="outline" color="success" icon="i-heroicons-printer" @click="print">
-          Print
-        </UButton>
-        <UButton to="/pos" variant="outline" icon="i-heroicons-arrow-left" color="info">
-          Back
-        </UButton>
       </div>
     </div>
     

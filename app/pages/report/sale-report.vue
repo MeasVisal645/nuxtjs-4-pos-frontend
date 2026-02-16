@@ -5,7 +5,7 @@ import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { OrderItems, OrderItemDetails } from '~/types'
 import toArray from '~/utils/helper'
 
-type User = { id: number; name: string }
+type User = { id: number; username: string }
 
 const {
   loadError,
@@ -33,14 +33,13 @@ onMounted(async () => {
   try {
     await loadLookups()
   } catch (err) {
-    console.error('Failed to load lookups:', err)
+    console.error('Failed to load users:', err)
   }
 })
 
 const userNameById = computed<Record<number, string>>(() =>
-  Object.fromEntries(users.value.map(u => [u.id, u.name]))
+  Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
 )
-
 
 const toast = useToast()
 
@@ -50,7 +49,6 @@ const viewModalOpen = ref(false)
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
 
 const table = useTemplateRef('table')
 
@@ -101,8 +99,12 @@ const columns: TableColumn<OrderItemDetails>[] = [
   {
     id: 'user',
     header: 'Sale By',
-    accessorFn: (r) => userNameById.value[r.orderItems.userId] ?? `#${r.orderItems.userId}`
+    cell: ({ row }) => {
+      const id = row.original.orderItems.userId
+      return userNameById.value[id] ?? `#${id}`
+    }
   },
+
   {
     accessorKey: 'paid',
     header: 'Paid',

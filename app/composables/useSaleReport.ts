@@ -34,8 +34,6 @@ export function useSaleReport() {
       );
 
       orderItems.value = res.content ?? [];
-      console.log('GET /order', pageNumber.value, pageSize.value)
-
       totalRecords.value = res.totalRecords ?? 0;
       totalPages.value = res.totalPages ?? 0;
 
