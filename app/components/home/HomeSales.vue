@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import type { Period, Range, Sale } from '~/types'
+import { getPaginationRowModel } from '@tanstack/vue-table'
+import type { OrderItemDetails, Period, Range,  } from '~/types'
+import toArray from '~/utils/helper';
+
+type User = { id: number; username: string }
 
 const props = defineProps<{
   period: Period
@@ -10,87 +14,77 @@ const props = defineProps<{
 
 const UBadge = resolveComponent('UBadge')
 
-const sampleEmails = [
-  'james.anderson@example.com',
-  'mia.white@example.com',
-  'william.brown@example.com',
-  'emma.davis@example.com',
-  'ethan.harris@example.com'
-]
+const {
+  orderItems,
+  pending,
+} = useSaleReport()
 
-const { data } = await useAsyncData('sales', async () => {
-  const sales: Sale[] = []
-  const currentDate = new Date()
+const users = ref<User[]>([])
 
-  for (let i = 0; i < 5; i++) {
-    const hoursAgo = randomInt(0, 48)
-    const date = new Date(currentDate.getTime() - hoursAgo * 3600000)
+async function loadLookups() {
+  const [userRes] = await Promise.all([
+    useApi('/user/all')
+  ])
 
-    sales.push({
-      id: (4600 - i).toString(),
-      date: date.toISOString(),
-      status: randomFrom(['paid', 'failed', 'refunded']),
-      email: randomFrom(sampleEmails),
-      amount: randomInt(100, 1000)
-    })
+  users.value = toArray<User>(userRes)
+}
+
+onMounted(async () => {
+  try {
+    await loadLookups()
+  } catch (err) {
+    console.error('Failed to load users:', err)
   }
-
-  return sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-}, {
-  watch: [() => props.period, () => props.range],
-  default: () => []
 })
 
-const columns: TableColumn<Sale>[] = [
+const userNameById = computed<Record<number, string>>(() =>
+  Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
+)
+
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 5
+})
+
+const columns: TableColumn<OrderItemDetails>[] = [
   {
-    accessorKey: 'id',
-    header: 'ID',
-    cell: ({ row }) => `#${row.getValue('id')}`
+    id: 'no',
+    header: 'No',
+    cell: ({ row, table }) => {
+      const pageIndex = table.getState().pagination.pageIndex
+      const pageSize = table.getState().pagination.pageSize
+      return pageIndex * pageSize + row.index + 1
+    }
   },
+  { id: 'orderNo', header: 'Order No', accessorFn: (r) => r.orderItems.orderNo },
   {
-    accessorKey: 'date',
-    header: 'Date',
+    id: 'user',
+    header: 'Sale By',
     cell: ({ row }) => {
-      return new Date(row.getValue('date')).toLocaleString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      const id = row.original.orderItems.userId
+      return userNameById.value[id] ?? `#${id}`
     }
   },
   {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-      const color = {
-        paid: 'success' as const,
-        failed: 'error' as const,
-        refunded: 'neutral' as const
-      }[row.getValue('status') as string]
-
-      return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () =>
-        row.getValue('status')
+    accessorKey: 'paid',
+    header: 'Paid',
+    cell: ({ row }) =>
+      h(
+        UBadge,
+        {
+          color: row.original.orderItems.paid ? 'success' : 'error',
+          variant: 'soft',
+          ui: { rounded: 'rounded-full' }
+        },
+        () => (row.original.orderItems.paid ? 'Paid' : 'Unpaid')
       )
-    }
   },
   {
-    accessorKey: 'email',
-    header: 'Email'
-  },
-  {
-    accessorKey: 'amount',
-    header: () => h('div', { class: 'text-right' }, 'Amount'),
+    accessorKey: 'createdDate',
+    header: 'Date (dd/mm/yyyy)',
     cell: ({ row }) => {
-      const amount = Number.parseFloat(row.getValue('amount'))
-
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'EUR'
-      }).format(amount)
-
-      return h('div', { class: 'text-right font-medium' }, formatted)
+      const d = new Date(row.original.orderItems.createdDate)
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}  ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     }
   }
 ]
@@ -98,15 +92,20 @@ const columns: TableColumn<Sale>[] = [
 
 <template>
   <UTable
-    :data="data"
+    ref="table"
+    class="w-full shrink-0"
+    v-model:pagination="pagination"
+    :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
+    :data="orderItems"
     :columns="columns"
-    class="shrink-0"
+    :loading="pending"
     :ui="{
       base: 'table-fixed border-separate border-spacing-0',
       thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
       tbody: '[&>tr]:last:[&>td]:border-b-0',
-      th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-      td: 'border-b border-default'
+      th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r text-black dark:text-white',
+      td: 'border-b border-default text-black dark:text-white',
+      separator: 'h-0'
     }"
   />
 </template>

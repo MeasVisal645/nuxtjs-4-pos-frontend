@@ -104,7 +104,6 @@ const columns: TableColumn<OrderItemDetails>[] = [
       return userNameById.value[id] ?? `#${id}`
     }
   },
-
   {
     accessorKey: 'paid',
     header: 'Paid',
