@@ -19,15 +19,15 @@ const emit = defineEmits<{
 }>()
 
 const schema = z.object({
-  code: z.string(),
-  name: z.string().min(1, { message: 'Required' }),
-  cost: z.coerce.number(),
-  price: z.coerce.number(),
-  quantity: z.coerce.number(),
+  code: z.string().optional(),
+  name: z.string().min(1, { message: 'Required' }).optional(),
+  cost: z.coerce.number().optional(),
+  price: z.coerce.number().optional(),
+  quantity: z.coerce.number().optional(),
   unit: z.enum(['PCS', 'SET', 'CASE', 'KG', 'BOTTLE', 'BOX']),
-  categoryId: z.coerce.number(), 
+  categoryId: z.coerce.number().optional(), 
   brandId: z.coerce.number().optional(),
-  active:z.boolean()
+  active:z.boolean().optional()
 })
 
 async function loadSelects() {
