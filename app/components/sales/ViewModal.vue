@@ -45,15 +45,11 @@ const emit = defineEmits<{
   submitted: []
 }>()
 
-// ---- derived from props ----
+const firstDetail = computed(() => details.value[0] ?? null)
 const details = computed<OrderDetails[]>(() => props.data?.orderDetails ?? [])
 
 const orderNo = computed(() => props.data?.orderItems?.orderNo ?? '')
 const createdDate = computed(() => props.data?.orderItems?.createdDate ?? '')
-
-// take from first detail row (assuming all details share same customer/payment)
-const firstDetail = computed(() => details.value[0] ?? null)
-
 const customerId = computed(() => firstDetail.value?.customerId ?? null)
 const paymentMethod = computed(() => firstDetail.value?.paymentMethod ?? '')
 
