@@ -85,22 +85,22 @@ const links = [[{
     icon: 'i-lucide-book-text',
     defaultOpen: false,
     type: 'trigger',
-  children: [
-    {
-      label: 'Sale Report',
-      to: '/report/sale-report',
-      exact: true,
-      onSelect: () => {
-        open.value = false
-      }
-    },{
-      label: 'Quantity Adjustment',
-      to: '/product/quantity-adjustment',
-      exact: true,
-      onSelect: () => {
-        open.value = false
-      }
-    }]
+    children: [
+      {
+        label: 'Sale Report',
+        to: '/report/sale-report',
+        exact: true,
+        onSelect: () => {
+          open.value = false
+        }
+      },{
+        label: 'Quantity Adjustment',
+        to: '/product/quantity-adjustment',
+        exact: true,
+        onSelect: () => {
+          open.value = false
+        }
+      }]
   }, {
     label: 'Settings',
     to: '/setting',
@@ -139,17 +139,19 @@ const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
   items: links.flat()
-}, {
-  id: 'code',
-  label: 'Code',
-  items: [{
-    id: 'source',
-    label: 'View page source',
-    icon: 'i-simple-icons-github',
-    to: `https://github.com/MeasVisal645/nuxtjs-4-pos-frontend`,
-    target: '_blank'
-  }]
-}])
+},
+  // {
+  // id: 'code',
+  // label: 'Code',
+  // items: [{
+  //   id: 'source',
+  //   label: 'View page source',
+  //   icon: 'i-simple-icons-github',
+  //   to: `https://github.com/MeasVisal645/nuxtjs-4-pos-frontend`,
+  //   target: '_blank'
+  // }]
+  // }
+])
 
 </script>
 

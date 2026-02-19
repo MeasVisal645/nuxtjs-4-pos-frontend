@@ -2,9 +2,7 @@
 import { DateFormatter, getLocalTimeZone, CalendarDate, today } from '@internationalized/date'
 import type { Range } from '~/types'
 
-const df = new DateFormatter('en-US', {
-  dateStyle: 'medium'
-})
+const df = new DateFormatter('en-US', { dateStyle: 'medium' })
 
 const selected = defineModel<Range>({ required: true })
 
@@ -17,12 +15,10 @@ const ranges = [
   { label: 'Last year', years: 1 }
 ]
 
+const normalizeDate = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
 const toCalendarDate = (date: Date) => {
-  return new CalendarDate(
-    date.getFullYear(),
-    date.getMonth() + 1,
-    date.getDate()
-  )
+  return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
 
 const calendarRange = computed({
@@ -32,47 +28,41 @@ const calendarRange = computed({
   }),
   set: (newValue: { start: CalendarDate | null, end: CalendarDate | null }) => {
     selected.value = {
-      start: newValue.start ? newValue.start.toDate(getLocalTimeZone()) : new Date(),
-      end: newValue.end ? newValue.end.toDate(getLocalTimeZone()) : new Date()
+      start: newValue.start ? normalizeDate(newValue.start.toDate(getLocalTimeZone())) : normalizeDate(new Date()),
+      end: newValue.end ? normalizeDate(newValue.end.toDate(getLocalTimeZone())) : normalizeDate(new Date())
     }
   }
 })
 
+const computeStartDate = (range: { days?: number, months?: number, years?: number }) => {
+  const endDate = today(getLocalTimeZone())
+  let startDate = endDate.copy()
+
+  // ✅ inclusive ranges for "Last X days"
+  if (range.days) startDate = startDate.subtract({ days: range.days - 1 })
+  else if (range.months) startDate = startDate.subtract({ months: range.months })
+  else if (range.years) startDate = startDate.subtract({ years: range.years })
+
+  return { startDate, endDate }
+}
+
 const isRangeSelected = (range: { days?: number, months?: number, years?: number }) => {
   if (!selected.value.start || !selected.value.end) return false
 
-  const currentDate = today(getLocalTimeZone())
-  let startDate = currentDate.copy()
-
-  if (range.days) {
-    startDate = startDate.subtract({ days: range.days })
-  } else if (range.months) {
-    startDate = startDate.subtract({ months: range.months })
-  } else if (range.years) {
-    startDate = startDate.subtract({ years: range.years })
-  }
+  const { startDate, endDate } = computeStartDate(range)
 
   const selectedStart = toCalendarDate(selected.value.start)
   const selectedEnd = toCalendarDate(selected.value.end)
 
-  return selectedStart.compare(startDate) === 0 && selectedEnd.compare(currentDate) === 0
+  return selectedStart.compare(startDate) === 0 && selectedEnd.compare(endDate) === 0
 }
 
 const selectRange = (range: { days?: number, months?: number, years?: number }) => {
-  const endDate = today(getLocalTimeZone())
-  let startDate = endDate.copy()
-
-  if (range.days) {
-    startDate = startDate.subtract({ days: range.days })
-  } else if (range.months) {
-    startDate = startDate.subtract({ months: range.months })
-  } else if (range.years) {
-    startDate = startDate.subtract({ years: range.years })
-  }
+  const { startDate, endDate } = computeStartDate(range)
 
   selected.value = {
-    start: startDate.toDate(getLocalTimeZone()),
-    end: endDate.toDate(getLocalTimeZone())
+    start: normalizeDate(startDate.toDate(getLocalTimeZone())),
+    end: normalizeDate(endDate.toDate(getLocalTimeZone()))
   }
 }
 </script>
@@ -100,7 +90,10 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
       </span>
 
       <template #trailing>
-        <UIcon name="i-lucide-chevron-down" class="shrink-0 text-dimmed size-5 group-data-[state=open]:rotate-180 transition-transform duration-200" />
+        <UIcon
+          name="i-lucide-chevron-down"
+          class="shrink-0 text-dimmed size-5 group-data-[state=open]:rotate-180 transition-transform duration-200"
+        />
       </template>
     </UButton>
 

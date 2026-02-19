@@ -11,31 +11,16 @@ const props = defineProps<{
 const days = computed(() => eachDayOfInterval(props.range))
 
 const periods = computed<Period[]>(() => {
-  if (days.value.length <= 8) {
-    return [
-      'daily'
-    ]
-  }
-
-  if (days.value.length <= 31) {
-    return [
-      'daily',
-      'weekly',
-      
-    ]
-  }
-
-  return [
-    'weekly',
-    'monthly'
-  ]
+  if (days.value.length <= 8) return ['daily']
+  if (days.value.length <= 31) return ['daily', 'weekly']
+  return ['weekly', 'monthly']
 })
 
 watch(periods, () => {
   if (!periods.value.includes(model.value)) {
     model.value = periods.value[0]!
   }
-})
+}, { immediate: true })
 </script>
 
 <template>
