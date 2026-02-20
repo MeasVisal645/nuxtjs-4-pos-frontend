@@ -43,8 +43,8 @@ function bucketStart(date: Date, period: Period) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-// ---- revenue loader ----
-async function loadRevenue() {
+// ---- loader ----
+async function loader() {
   try {
     pending.value = true
 
@@ -88,7 +88,7 @@ async function loadRevenue() {
 
 watch(
   () => [props.period, props.range.start.getTime(), props.range.end.getTime()],
-  loadRevenue,
+  loader,
   { immediate: true }
 )
 
@@ -113,11 +113,10 @@ type StatDef = {
 const statDefs: StatDef[] = [
   { key: 'totalCustomers', title: 'Customers', icon: 'i-lucide-users', to: '/customer' },
   { key: 'totalProducts', title: 'Products', icon: 'i-lucide-chart-pie', to: '/product' },
-  { key: 'totalSales', title: 'Revenue', icon: 'i-lucide-circle-dollar-sign', to: '/report', formatter: formatCurrency },
-  { key: 'totalOrders', title: 'Orders', icon: 'i-lucide-shopping-cart', to: '/order' }
+  { key: 'totalSales', title: 'Revenue', icon: 'i-lucide-circle-dollar-sign', to: '/report/sale-report', formatter: formatCurrency },
+  { key: 'totalOrders', title: 'Orders', icon: 'i-lucide-shopping-cart', to: '/report/sale-report' }
 ]
 
-// ✅ make key depend on range so it refreshes properly
 const statsKey = computed(() => {
   const s = props.range.start.getTime()
   const e = props.range.end.getTime()

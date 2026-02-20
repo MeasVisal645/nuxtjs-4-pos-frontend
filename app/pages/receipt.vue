@@ -37,7 +37,7 @@ const print = () => {
           </UButton>
         </div>
         <NuxtImg
-          src="https://cdn.my-pos-sys.store/Logo%20400x400.png"
+          src="https://cdn.my-pos-sys.store/Logo.png"
           width="150px"
           class="mx-auto mb-2 object-contain"
         />

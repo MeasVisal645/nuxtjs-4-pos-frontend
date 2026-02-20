@@ -17,16 +17,17 @@ useHead({
   }
 })
 
-const title = 'pos-system'
-const description = 'pos-system frontend built with Nuxt 4 and Nuxt UI'
+const title = 'Buzz-Cafe'
+const description = 'Point of Sale system for small and medium businesses. Manage your sales, inventory, and customers with ease.'
+const image = 'https://cdn.my-pos-sys.store/Logo.png'
 
 useSeoMeta({
   title,
   description,
   ogTitle: title,
   ogDescription: description,
-  ogImage: 'https://cdn.my-pos-sys.store/Logo%20400x400.png',
-  twitterImage: 'https://cdn.my-pos-sys.store/Logo%20400x400.png',
+  ogImage: image,
+  twitterImage: image,
 })
 </script>
 
