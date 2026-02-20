@@ -12,10 +12,10 @@ const emit = defineEmits<{
 }>()
 
 const schema = z.object({
-  username: z.string().min(1, { message: 'Required' }),
-  password: z.string().min(1, { message: 'Required' }),
-  role: z.string().min(1, { message: 'Required' }),
-  active: z.boolean({ message: 'Required' })
+  username: z.string().min(1, { message: 'Required' }).optional(),
+  password: z.string().min(1, { message: 'Required' }).optional(),
+  role: z.string().min(1, { message: 'Required' }).optional(),
+  active: z.boolean({ message: 'Required' }).optional()
 
 })
 
@@ -49,9 +49,5 @@ const fields = [
     updateUrl="/user"      
     @submitted="emit('submitted')"
   >
-    <template #default>
-
-      
-    </template>
   </FormModal>
 </template>

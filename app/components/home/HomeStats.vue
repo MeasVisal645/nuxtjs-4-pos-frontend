@@ -113,8 +113,8 @@ type StatDef = {
 const statDefs: StatDef[] = [
   { key: 'totalCustomers', title: 'Customers', icon: 'i-lucide-users', to: '/customer' },
   { key: 'totalProducts', title: 'Products', icon: 'i-lucide-chart-pie', to: '/product' },
-  { key: 'totalSales', title: 'Revenue', icon: 'i-lucide-circle-dollar-sign', to: '/report', formatter: formatCurrency },
-  { key: 'totalOrders', title: 'Orders', icon: 'i-lucide-shopping-cart', to: '/order' }
+  { key: 'totalSales', title: 'Revenue', icon: 'i-lucide-circle-dollar-sign', to: '/report/sale-report', formatter: formatCurrency },
+  { key: 'totalOrders', title: 'Orders', icon: 'i-lucide-shopping-cart', to: '/report/order-report' }
 ]
 
 // ✅ make key depend on range so it refreshes properly

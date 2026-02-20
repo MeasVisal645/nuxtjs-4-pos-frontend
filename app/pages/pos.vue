@@ -33,6 +33,9 @@ const STEP = 30
 const loadingMore = ref(false)
 const productScroll = ref<HTMLElement | null>(null)
 
+// ---------- Mobile cart drawer ----------
+const isCartOpen = ref(false)
+
 // ---------- Loaders ----------
 async function loadCustomers() {
   const res = await useApi('/customer/all')
@@ -73,7 +76,6 @@ onMounted(async () => {
       loadCurrentUser()
     ])
 
-    // Setup infinite scroll AFTER data loaded
     useInfiniteScroll(
       productScroll,
       async () => {
@@ -81,7 +83,7 @@ onMounted(async () => {
         if (visibleCount.value >= filteredAllProducts.value.length) return
 
         loadingMore.value = true
-        await new Promise(r => setTimeout(r, 120)) // small delay so loading bar is visible
+        await new Promise(r => setTimeout(r, 120))
         visibleCount.value += STEP
         loadingMore.value = false
       },
@@ -92,7 +94,6 @@ onMounted(async () => {
   }
 })
 
-// ---------- Helpers (imageUrl can be string or AvatarProps-like object) ----------
 function imgSrc(p: any): string | null {
   const v = p?.imageUrl
   if (!v) return null
@@ -101,7 +102,6 @@ function imgSrc(p: any): string | null {
   return null
 }
 
-// ---------- Derived: filtering ----------
 const filteredAllProducts = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
 
@@ -125,12 +125,10 @@ const filteredProducts = computed(() => {
   return filteredAllProducts.value.slice(0, visibleCount.value)
 })
 
-// reset visible when filters change
 watch([searchQuery, selectedCategory], () => {
   visibleCount.value = 30
 })
 
-// ---------- Stock helpers ----------
 function cartQtyFor(productId: number) {
   return cart.value.find(i => i.product.id === productId)?.quantity ?? 0
 }
@@ -144,7 +142,6 @@ function isOutOfStock(p: any) {
   return remainingStock(p) <= 0
 }
 
-// ---------- Calculate Total ----------
 const subtotalUSD = computed(() => subtotalKHR.value / KHR_RATE)
 const taxUSD = computed(() => taxKHR.value / KHR_RATE)
 const totalUSD = computed(() => totalKHR.value / KHR_RATE)
@@ -165,11 +162,8 @@ const selectedCustomer = computed(() => {
 
 const selectedCustomerName = computed(() => selectedCustomer.value?.name ?? 'Walk-in')
 
-// ---------- Cart Actions ----------
 function addToCart(product: any) {
-  // only allow if remaining stock >= 1
   if (isOutOfStock(product)) return
-
   const existing = cart.value.find(i => i.product.id === product.id)
   if (existing) existing.quantity++
   else cart.value.push({ product, quantity: 1 })
@@ -187,7 +181,6 @@ function handleCheckout() {
   else alert('Cart is empty!')
 }
 
-// ---------- Payment ----------
 async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
   try {
     if (cart.value.length === 0) return
@@ -242,6 +235,36 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     alert('Payment failed')
   }
 }
+
+// without create order
+function handlePrint() {
+  if (cart.value.length === 0) return
+
+  const receiptData = {
+    orderNo: '',
+    username: currentUser.value?.username ?? '',
+    customerId: selectedCustomerId.value,
+    customerName: selectedCustomerName.value,
+    items: cart.value.map(i => ({
+      name: i.product.name,
+      price: Number(i.product.price ?? 0),
+      quantity: i.quantity
+    })),
+    totalKHR: totalKHR.value,
+    totalUSD: totalUSD.value,
+    taxKHR: taxKHR.value,
+    taxUSD: taxUSD.value,
+    subtotalKHR: subtotalKHR.value,
+    subtotalUSD: subtotalUSD.value,
+    date: new Date().toISOString(),
+    paymentMethod: 'PREVIEW'
+  }
+
+  navigateTo({
+    path: '/receipt',
+    query: { data: JSON.stringify(receiptData) }
+  })
+}
 </script>
 
 <template>
@@ -250,7 +273,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Filters Header -->
       <div class="flex items-center gap-3 mb-4 bg-white dark:bg-gray-900 p-2 rounded-xl shadow-sm">
-        <!-- Left -->
         <div class="flex items-center gap-4 flex-1 min-w-0">
           <NuxtLink to="/" class="shrink-0">
             <UButton variant="ghost" color="neutral" icon="i-lucide-arrow-left" label="Back" />
@@ -258,7 +280,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
 
           <div class="h-6 w-px bg-gray-200 dark:bg-gray-700 shrink-0" />
 
-          <!-- Scrollable categories -->
           <div class="flex-1 min-w-0">
             <div class="flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar">
               <UButton
@@ -275,7 +296,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
           </div>
         </div>
 
-        <!-- Right -->
         <div class="shrink-0">
           <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search items..." class="w-72">
             <template #trailing v-if="searchQuery">
@@ -285,7 +305,7 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
         </div>
       </div>
 
-      <!-- Products Grid + Infinite Scroll -->
+      <!-- Products Grid -->
       <div ref="productScroll" class="flex-1 overflow-y-auto p-2 no-scrollbar relative">
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-10">
           <UCard
@@ -317,7 +337,6 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
               <div class="text-info-600 dark:text-info-400 font-bold text-sm">
                 {{ KHR(product.price ?? 0) }}
               </div>
-
               <div class="text-[11px]" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
                 Stock: {{ product.quantity ?? 0 }}
               </div>
@@ -335,11 +354,11 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
       </div>
     </div>
 
-    <!-- Cart Section -->
+    <!-- CART: Desktop sidebar -->
     <UCard
-      class="w-96 flex flex-col h-full shadow-xl overflow-hidden"
+      class="hidden lg:flex w-96 flex-col h-full shadow-xl overflow-hidden"
       :ui="{
-        body: 'flex-1 flex flex-col p-0 overflow-hidden',
+        body: 'flex-1 flex flex-col overflow-hidden',
         header: 'p-4 shrink-0',
         footer: 'p-4 border-t dark:border-gray-800 shrink-0'
       }"
@@ -349,57 +368,34 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
           <h2 class="font-bold text-lg">Order</h2>
           <UBadge color="info" variant="subtle" size="lg">{{ totalItems }} items</UBadge>
         </div>
-
         <div class="mt-3">
-          <USelect
-            v-model="selectedCustomerId"
-            :items="customerItems"
-            placeholder="Select customer"
-            class="w-full"
-          />
+          <USelect v-model="selectedCustomerId" :items="customerItems" placeholder="Select customer" class="w-full" />
         </div>
       </template>
 
-      <!-- Cart Items -->
-      <div class="flex-1 overflow-y-auto space-y-4 no-scrollbar p-2">
-        <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400 space-y-2 opacity-60">
+      <div class="flex-1 overflow-y-auto space-y-4 no-scrollbar">
+        <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-black space-y-2 opacity-60">
           <UIcon name="i-lucide-shopping-cart" class="w-16 h-16" />
           <p class="font-medium">No items added</p>
         </div>
-
         <div
           v-else
           v-for="(item, idx) in cart"
           :key="item.product.id"
-          class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg"
+          class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
         >
           <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
-            <img
-              v-if="imgSrc(item.product)"
-              :src="imgSrc(item.product)!"
-              :alt="item.product.name"
-              class="w-full h-full object-contain p-2"
-              loading="lazy"
-            />
+            <img v-if="imgSrc(item.product)" :src="imgSrc(item.product)!" :alt="item.product.name" class="w-full h-full object-contain p-2" loading="lazy" />
             <UIcon v-else name="i-lucide-package" class="w-6 h-6 text-gray-400" />
           </div>
-
           <div class="flex-1 min-w-0">
             <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
             <div class="text-xs text-gray-500">{{ KHR(item.product.price ?? 0) }}</div>
           </div>
-
           <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
             <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
             <span class="w-6 text-center text-xs font-bold">{{ item.quantity }}</span>
-            <UButton
-              icon="i-lucide-plus"
-              color="info"
-              variant="ghost"
-              size="xs"
-              :disabled="item.quantity >= Number(item.product.quantity ?? 0)"
-              @click.stop="updateQuantity(idx, 1)"
-            />
+            <UButton icon="i-lucide-plus" color="info" variant="ghost" size="xs" :disabled="item.quantity >= Number(item.product.quantity ?? 0)" @click.stop="updateQuantity(idx, 1)" />
           </div>
         </div>
       </div>
@@ -409,36 +405,135 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
           <div class="space-y-1 text-sm">
             <div class="flex justify-between text-gray-500">
               <span>Subtotal</span>
-              <span>
-                {{ KHR(subtotalKHR) }}
-                <span class="text-xs text-gray-400 ml-1">({{ USD(subtotalUSD) }})</span>
-              </span>
+              <span>{{ KHR(subtotalKHR) }} <span class="text-xs text-gray-400 ml-1">({{ USD(subtotalUSD) }})</span></span>
             </div>
-
             <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
               <span>Tax (10%)</span>
               <span>{{ KHR(taxKHR) }} ({{ USD(taxUSD) }})</span>
             </div>
           </div>
-
           <div class="flex justify-between font-black text-2xl mb-2">
             <span>Total</span>
             <span class="text-info-600">{{ KHR(totalKHR) }} ({{ USD(totalUSD) }})</span>
           </div>
 
-          <UButton
-            block
-            size="xl"
-            color="primary"
-            class="font-bold"
-            :disabled="cart.length === 0"
-            @click="handleCheckout"
-          >
+          <!-- Print & Clear -->
+          <div class="grid grid-cols-2 gap-2">
+            <UButton block color="neutral" variant="outline" icon="i-lucide-printer" :disabled="cart.length === 0" @click="handlePrint">
+              Print
+            </UButton>
+            <UButton block color="error" variant="outline" icon="i-lucide-trash-2" :disabled="cart.length === 0" @click="cart = []">
+              Clear
+            </UButton>
+          </div>
+
+          <UButton block size="xl" color="primary" class="font-bold" :disabled="cart.length === 0" @click="handleCheckout">
             Check out ${{ totalKHR.toFixed(2) }}
           </UButton>
         </div>
       </template>
     </UCard>
+
+    <!-- CART: Mobile floating btn -->
+    <div class="lg:hidden fixed bottom-6 right-6 z-50">
+      <UButton
+        icon="i-lucide-shopping-cart"
+        size="xl"
+        color="primary"
+        class="rounded-full shadow-2xl relative"
+        @click="isCartOpen = true"
+      />
+      <UBadge
+        v-if="totalItems > 0"
+        color="error"
+        variant="solid"
+        size="xs"
+        class="absolute -top-1 -right-1 pointer-events-none"
+      >
+        {{ totalItems }}
+      </UBadge>
+    </div>
+
+    <!-- CART: Mobile drawer -->
+    <UDrawer v-model:open="isCartOpen" direction="bottom" class="lg:hidden">
+      <template #content>
+        <div class="flex flex-col h-[85dvh]">
+          <!-- Drawer Header -->
+          <div class="flex items-center justify-between p-4 border-b border-gray-400 dark:border-gray-400 shrink-0">
+            <div class="flex items-center gap-2">
+              <h2 class="font-bold text-lg">Order</h2>
+              <UBadge color="info" variant="subtle" size="lg">{{ totalItems }} items</UBadge>
+            </div>
+            <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="isCartOpen = false" />
+          </div>
+
+          <!-- Customer Select -->
+          <div class="p-4 shrink-0">
+            <USelect v-model="selectedCustomerId" :items="customerItems" placeholder="Select customer" class="w-full" />
+          </div>
+
+          <!-- Cart Items -->
+          <div class="flex-1 overflow-y-auto space-y-4 no-scrollbar p-2">
+            <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400 space-y-2 opacity-60">
+              <UIcon name="i-lucide-shopping-cart" class="w-16 h-16" />
+              <p class="font-medium">No items added</p>
+            </div>
+            <div
+              v-else
+              v-for="(item, idx) in cart"
+              :key="item.product.id"
+              class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg"
+            >
+              <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                <img v-if="imgSrc(item.product)" :src="imgSrc(item.product)!" :alt="item.product.name" class="w-full h-full object-contain p-2" loading="lazy" />
+                <UIcon v-else name="i-lucide-package" class="w-6 h-6 text-gray-400" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
+                <div class="text-xs text-gray-500">{{ KHR(item.product.price ?? 0) }}</div>
+              </div>
+              <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
+                <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
+                <span class="w-6 text-center text-xs font-bold">{{ item.quantity }}</span>
+                <UButton icon="i-lucide-plus" color="info" variant="ghost" size="xs" :disabled="item.quantity >= Number(item.product.quantity ?? 0)" @click.stop="updateQuantity(idx, 1)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer  -->
+          <div class="p-4 border-t dark:border-gray-800 shrink-0 space-y-3">
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between text-gray-500">
+                <span>Subtotal</span>
+                <span>{{ KHR(subtotalKHR) }} <span class="text-xs text-gray-400 ml-1">({{ USD(subtotalUSD) }})</span></span>
+              </div>
+              <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
+                <span>Tax (10%)</span>
+                <span>{{ KHR(taxKHR) }} ({{ USD(taxUSD) }})</span>
+              </div>
+            </div>
+            <div class="flex justify-between font-black text-2xl mb-2">
+              <span>Total</span>
+              <span class="text-info-600">{{ KHR(totalKHR) }} ({{ USD(totalUSD) }})</span>
+            </div>
+
+            <!-- Print & Clear -->
+            <div class="grid grid-cols-2 gap-2">
+              <UButton block color="neutral" variant="outline" icon="i-lucide-printer" :disabled="cart.length === 0" @click="handlePrint">
+                Print
+              </UButton>
+              <UButton block color="error" variant="outline" icon="i-lucide-trash-2" :disabled="cart.length === 0" @click="cart = []">
+                Clear
+              </UButton>
+            </div>
+
+            <UButton block size="xl" color="primary" class="font-bold" :disabled="cart.length === 0" @click="handleCheckout">
+              Check out ${{ totalKHR.toFixed(2) }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UDrawer>
 
     <!-- Payment Modal -->
     <UModal v-model:open="isPaymentModalOpen" title="Payment">
@@ -451,20 +546,9 @@ async function confirmPayment(method: 'KHQR' | 'CASH' = 'KHQR') {
               Customer: <span class="font-semibold">{{ selectedCustomerName }}</span>
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-4 mb-6">
-            <UButton
-              block size="xl" color="info" variant="outline"
-              icon="i-lucide-banknote" label="Cash"
-              class="h-20 flex-col gap-2"
-              @click="confirmPayment('CASH')"
-            />
-            <UButton
-              block size="xl" color="info" variant="outline"
-              icon="i-lucide-qr-code" label="QR Code"
-              class="h-20 flex-col gap-2"
-              @click="confirmPayment('KHQR')"
-            />
+            <UButton block size="xl" color="info" variant="outline" icon="i-lucide-banknote" label="Cash" class="h-20 flex-col gap-2" @click="confirmPayment('CASH')" />
+            <UButton block size="xl" color="info" variant="outline" icon="i-lucide-qr-code" label="QR Code" class="h-20 flex-col gap-2" @click="confirmPayment('KHQR')" />
           </div>
         </div>
       </template>
