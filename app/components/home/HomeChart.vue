@@ -53,8 +53,8 @@ async function loadRevenue() {
   try {
     pending.value = true
 
-    const start = props.range.start.toISOString()
-    const end = props.range.end.toISOString()
+    const start = format(props.range.start, 'yyyy-MM-dd')
+    const end = format(props.range.end, 'yyyy-MM-dd')
 
     const rows = await useApi<ApiRow[]>('/order/date', {
       params: { startDate: start, endDate: end }
