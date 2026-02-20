@@ -7,9 +7,9 @@ const df = new DateFormatter('en-US', { dateStyle: 'medium' })
 const selected = defineModel<Range>({ required: true })
 
 const ranges = [
-  { label: 'Last 7 days', days: 7 },
-  { label: 'Last 14 days', days: 14 },
-  { label: 'Last 30 days', days: 30 },
+  { label: 'Last 7 days', days: 8 },
+  { label: 'Last 14 days', days: 15 },
+  { label: 'Last 30 days', days: 31 },
   { label: 'Last 3 months', months: 3 },
   { label: 'Last 6 months', months: 6 },
   { label: 'Last year', years: 1 }
@@ -38,7 +38,6 @@ const computeStartDate = (range: { days?: number, months?: number, years?: numbe
   const endDate = today(getLocalTimeZone())
   let startDate = endDate.copy()
 
-  // ✅ inclusive ranges for "Last X days"
   if (range.days) startDate = startDate.subtract({ days: range.days - 1 })
   else if (range.months) startDate = startDate.subtract({ months: range.months })
   else if (range.years) startDate = startDate.subtract({ years: range.years })

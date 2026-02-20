@@ -48,7 +48,6 @@ async function loadRevenue() {
   try {
     pending.value = true
 
-    // ✅ backend range params (LocalDate)
     const startDate = format(props.range.start, 'yyyy-MM-dd')
     const endDate = format(props.range.end, 'yyyy-MM-dd')
 
@@ -94,14 +93,14 @@ watch(
 )
 
 // ---- dashboard stats ----
-type DashboardAll = {
+type Dashboard = {
   totalCustomers: number
   totalSales: number
   totalOrders: number
   totalProducts: number
 }
 
-type StatKey = keyof DashboardAll
+type StatKey = keyof Dashboard
 
 type StatDef = {
   key: StatKey
@@ -131,8 +130,7 @@ const { data: stats } = await useAsyncData<(Stat & { to: string })[]>(
     const startDate = format(props.range.start, 'yyyy-MM-dd')
     const endDate = format(props.range.end, 'yyyy-MM-dd')
 
-    // ✅ pass params (backend expects range)
-    const d = await useApi<DashboardAll>('/dashboard/all', {
+    const d = await useApi<Dashboard>('/dashboard/all', {
       params: { startDate, endDate }
     })
 
