@@ -173,6 +173,40 @@ const search = computed({
     table.value?.tableApi?.getColumn('orderNo')?.setFilterValue(value || undefined)
   }
 })
+
+// ---------- Date Range Filter ----------
+import { CalendarDate, DateFormatter, getLocalTimeZone, today } from '@internationalized/date'
+
+const df = new DateFormatter('en-US', { dateStyle: 'medium' })
+
+const dateRange = shallowRef<{ start: CalendarDate | undefined; end: CalendarDate | undefined }>({
+  start: undefined,
+  end: undefined
+})
+
+function clearDateFilter() {
+  dateRange.value = { start: undefined, end: undefined }
+  pagination.value.pageIndex = 0
+}
+
+const filteredOrderItems = computed(() => {
+  const { start, end } = dateRange.value
+  if (!start && !end) return orderItems.value
+
+  return orderItems.value.filter((item: OrderItemDetails) => {
+    const d = new Date(item.orderItems.createdDate)
+    if (start) {
+      const from = start.toDate(getLocalTimeZone())
+      if (d < from) return false
+    }
+    if (end) {
+      const to = end.toDate(getLocalTimeZone())
+      to.setHours(23, 59, 59, 999)
+      if (d > to) return false
+    }
+    return true
+  })
+})
 </script>
 
 <template>
@@ -201,6 +235,34 @@ const search = computed({
             class="max-w-sm"
             icon="i-lucide-search"
             placeholder="Filter Order No..."
+          />
+          <!-- Date range picker -->
+          <UPopover>
+            <UButton color="neutral" variant="outline" icon="i-lucide-calendar">
+              <template v-if="dateRange.start">
+                <template v-if="dateRange.end">
+                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}
+                </template>
+                <template v-else>
+                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
+                </template>
+              </template>
+              <template v-else>
+                Date Range
+              </template>
+            </UButton>
+            <template #content>
+              <UCalendar v-model="dateRange" class="p-2" :number-of-months="2" range />
+            </template>
+          </UPopover>
+
+          <UButton
+            v-if="dateRange.start || dateRange.end"
+            icon="i-lucide-x"
+            color="neutral"
+            variant="outline"
+            size="sm"
+            @click="clearDateFilter"
           />
         </div>
 

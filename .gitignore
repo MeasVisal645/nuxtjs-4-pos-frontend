@@ -27,3 +27,4 @@ nuxt.config.ts
 .package-lock.json
 Dockerfile
 compose.yaml
+package-lock.json
