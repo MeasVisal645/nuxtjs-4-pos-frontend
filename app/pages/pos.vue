@@ -356,7 +356,7 @@ function handlePrint() {
 
     <!-- CART: Desktop sidebar -->
     <UCard
-      class="hidden lg:flex w-96 flex-col h-full shadow-xl overflow-hidden"
+      class="hidden lg:flex w-120 flex-col h-full shadow-xl overflow-hidden"
       :ui="{
         body: 'flex-1 flex flex-col overflow-hidden',
         header: 'p-4 shrink-0',
@@ -382,7 +382,7 @@ function handlePrint() {
           v-else
           v-for="(item, idx) in cart"
           :key="item.product.id"
-          class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+          class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2"
         >
           <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
             <img v-if="imgSrc(item.product)" :src="imgSrc(item.product)!" :alt="item.product.name" class="w-full h-full object-contain p-2" loading="lazy" />

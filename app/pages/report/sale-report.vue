@@ -139,29 +139,8 @@ const columns: TableColumn<OrderItemDetails>[] = [
         onClick: () => openModal(row.original)
       })
     }
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) =>
-      h(
-        'div',
-        { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: { align: 'end' },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
-        )
-      )
   }
+
 ]
 
 // Search
