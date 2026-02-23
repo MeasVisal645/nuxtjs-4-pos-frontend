@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { upperFirst } from 'scule'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import { getPaginationRowModel } from '@tanstack/table-core'
 import type { AuditLog } from '~/types'
 
 const {
@@ -13,16 +12,7 @@ const {
   totalRecords,
 } = useAuditLog()
 
-const toast = useToast()
-
-const selectedAuditLog = ref<AuditLog | null>(null)
-const viewModalOpen = ref(false)
-const editModalOpen = ref(false)
-const selectedId = ref<string | number | null>(null)
-
 const UBadge = resolveComponent('UBadge')
-const UButton = resolveComponent('UButton')
-const UDropdownMenu = resolveComponent('UDropdownMenu')
 const UCheckbox = resolveComponent('UCheckbox')
 
 const table = useTemplateRef('table')
@@ -37,51 +27,6 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 10
 })
-
-function getRowItems(row: Row<AuditLog>) {
-  return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'View Product Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedAuditLog.value = row.original
-        viewModalOpen.value = true     
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Edit Product',
-      icon: 'i-lucide-pencil',
-      onSelect() {
-        selectedId.value = row.original.id
-        editModalOpen.value = true
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Delete Product',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        toast.add({
-          title: 'Product deleted',
-          description: 'The product has been deleted.'
-        })
-      }
-    }
-  ]
-}
 
 const columns: TableColumn<AuditLog>[] = [
   {
@@ -120,7 +65,7 @@ const columns: TableColumn<AuditLog>[] = [
         GET: 'success',
         POST: 'warning',
         PUT: 'secondary',
-        DELETE: 'error' // 👈 added
+        DELETE: 'error'
       }
 
       return h(
@@ -151,22 +96,6 @@ const columns: TableColumn<AuditLog>[] = [
   }
 
 ]
-
-// Search Filter
-const globalFilter = ref('')
-const globalFilterFn = (row: any, _columnId: string, filterValue: string) => {
-  const q = String(filterValue ?? '').toLowerCase().trim()
-  if (!q) return true
-
-  const code = String(row.original.code ?? '').toLowerCase()
-  const name = String(row.original.name ?? '').toLowerCase()
-
-  return code.includes(q) || name.includes(q)
-}
-
-watch(globalFilter, (value) => {
-  table.value?.tableApi?.setGlobalFilter(value)
-})
 </script>
 
 <template>
@@ -190,45 +119,8 @@ watch(globalFilter, (value) => {
           :description="loadError?.data?.message || loadError?.message || 'Unknown error'"
         />
       </div>
-
-      <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <UInput
-            v-model="globalFilter"
-            class="max-w-sm"
-            icon="i-lucide-search"
-            placeholder="Filter Product Code..."
-          />
-        </div>
-        <div class="gap-2 flex">
-          <UDropdownMenu
-            :items="
-              table?.tableApi
-                ?.getAllColumns()
-                .filter((column: any) => column.getCanHide())
-                .map((column: any) => ({
-                  label: upperFirst(column.id),
-                  type: 'checkbox' as const,
-                  checked: column.getIsVisible(),
-                  onUpdateChecked(checked: boolean) {
-                    table?.tableApi?.getColumn(column.id)?.toggleVisibility(!!checked)
-                  },
-                  onSelect(e?: Event) {
-                    e?.preventDefault()
-                  }
-                }))
-            "
-            :content="{ align: 'end' }"
-          >
-            <UButton label="Display" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
-          </UDropdownMenu>
-        </div>
-      </div>
-
       <UTable
         ref="table"
-        v-model:global-filter="globalFilter"
-        :global-filter-fn="globalFilterFn"
         v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
         v-model:row-selection="rowSelection"

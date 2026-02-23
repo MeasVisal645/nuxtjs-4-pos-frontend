@@ -12,7 +12,6 @@ const {
   pageNumber,
   pageSize,
   totalRecords,
-  totalPages,
   modalOpen,
   selected,
   openModal
@@ -46,23 +45,6 @@ const pagination = ref({
 function getRowItems(row: Row<SupplierWithContacts>) {
   return [
     { type: 'label', label: 'Actions' },
-    { type: 'separator' },
-    {
-      label: 'View Contacts',
-      icon: 'i-lucide-users',
-      onSelect() {
-        openModal(row.original)
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'View Supplier Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedSupplier.value = row.original.supplier
-        viewModalOpen.value = true
-      }
-    },
     { type: 'separator' },
     {
       label: 'Edit Supplier',
@@ -234,7 +216,7 @@ const search = computed({
             v-model="search"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Filter Supplier Name..."
+            placeholder="Search..."
           />
         </div>
 
