@@ -27,7 +27,6 @@ const loadingProducts = ref(false)
 async function loadProducts() {
   try {
     loadingProducts.value = true
-    // ✅ change if your endpoint differs
     const res = await useApi<Product[]>('/product/all', { method: 'GET' })
     products.value = res ?? []
   } catch (e: any) {
