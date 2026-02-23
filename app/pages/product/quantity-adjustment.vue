@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import { getPaginationRowModel } from '@tanstack/table-core'
 import type { QuantityAdjustment } from '~/types'
 
 const {
@@ -158,7 +158,7 @@ watch(globalFilter, (value) => {
             v-model="globalFilter"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Filter Product Code..."
+            placeholder="Search..."
           />
         </div>
         <div class="gap-2 flex">

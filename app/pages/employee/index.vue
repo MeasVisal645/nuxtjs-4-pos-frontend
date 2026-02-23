@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { Employee, EmployeeUser } from '~/types'
+import type { EmployeeUser } from '~/types'
 
 const {
   fetchPagination,
@@ -20,10 +20,7 @@ const {
 
 const toast = useToast()
 
-const selectedEmployee = ref<Employee | null>(null)
-const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
-const addUserModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
 
 const UAvatar = resolveComponent('UAvatar')
@@ -202,8 +199,6 @@ watch(
   { immediate: true }
 )
 
-
-
 // Search Filter
 const globalFilter = ref('')
 
@@ -254,7 +249,7 @@ watch(globalFilter, (value) => {
             v-model="globalFilter"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Filter Email..."
+            placeholder="Search..."
           />
         </div>
         <div class="gap-2 flex">

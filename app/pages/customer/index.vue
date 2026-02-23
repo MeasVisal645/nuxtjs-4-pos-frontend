@@ -212,7 +212,7 @@ const code = computed({
             v-model="code"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Filter Product Code..."
+            placeholder="Search..."
           />
         </div>
         <div class="gap-2 flex">

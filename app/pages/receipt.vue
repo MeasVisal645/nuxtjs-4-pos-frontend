@@ -42,7 +42,7 @@ const print = () => {
           class="mx-auto mb-2 object-contain"
         />
 
-        <h1 class="font-bold text-lg uppercase text-black">Coffee Receipt</h1>
+        <h1 class="font-bold text-lg uppercase text-black">Receipt</h1>
         <p class="text-black">{{ new Date(order.date).toLocaleString() }}</p>
       </div>
 

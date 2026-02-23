@@ -262,7 +262,7 @@ const defaultValues = ref<Record<string, any>>({})
             v-model="globalFilter"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Filter Product Code..."
+            placeholder="Search..."
           />
         </div>
         <div class="gap-2 flex">
