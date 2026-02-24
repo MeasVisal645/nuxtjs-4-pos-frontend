@@ -12,7 +12,7 @@ const {
   pageNumber,
   pageSize,
   totalRecords,
-  totalPages
+  deleteById
 } = useProduct()
 
 const toast = useToast()
@@ -51,17 +51,6 @@ function getRowItems(row: Row<Product>) {
       type: 'separator'
     },
     {
-      label: 'View Product Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedProduct.value = row.original
-        viewModalOpen.value = true     
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
       label: 'Edit Product',
       icon: 'i-lucide-pencil',
       onSelect() {
@@ -77,6 +66,7 @@ function getRowItems(row: Row<Product>) {
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
+        deleteById(row.original.id)
         toast.add({
           title: 'Product deleted',
           description: 'The product has been deleted.'

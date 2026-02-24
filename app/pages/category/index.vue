@@ -64,10 +64,6 @@ function getRowItems(row: Row<Category>) {
       color: 'error',
       onSelect() {
         deleteById(row.original.id)
-        toast.add({
-          title: 'Category deleted',
-          description: 'The category has been deleted.'
-        })
       }
     }
   ]

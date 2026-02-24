@@ -13,7 +13,7 @@ const emit = defineEmits<{
 
 const schema = z.object({
   username: z.string().min(1, { message: 'Required' }),
-  password: z.string().min(1, { message: 'Required' })
+  password: z.string().min(8, { message: 'Must be at least 8 characters long' })
 })
 
 const fields = [

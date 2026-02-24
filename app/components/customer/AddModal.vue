@@ -6,10 +6,10 @@ const emit = defineEmits<{ (e: 'submitted'): void }>()
 const createModalOpen = ref(false)
 
 const schema = z.object({
-    name: z.string().min(1, { message: 'Required' }),
-    email: z.string().email({ message: 'Invalid email address' }),
-    phone: z.string().min(1, { message: 'Required' }),
-    address: z.string().min(1, { message: 'Required' }),
+    name: z.string({ message: 'Required' }).min(1, { message: 'Name is required' }),
+    email: z.email({ message: 'Invalid email address' }),
+    phone: z.string().min(8, { message: 'Phone number is required (minimum 8 characters)' }),
+    address: z.string().min(1, { message: 'Address is required' }),
 })
 
 const fields = [

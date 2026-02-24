@@ -8,15 +8,6 @@ export function useCustomer() {
   const customers = ref<Customer[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
-  const selectedId = ref<string>("");
-
-  const selectedItem = ref({
-    id: null,
-    code: "" as string | undefined,
-    name: "" as string | undefined,
-    active: "" as string | undefined,
-  });
-
   /** ===========================
    * Fetch All Customer Pagination
    * ========================== */
@@ -49,14 +40,22 @@ export function useCustomer() {
   watch([pageNumber, pageSize], fetchPagination);
 
   /** ===========================
-   * View Policy Modal
-   * ========================== */
-  const viewById = (ids: string[]) => {
-    if (ids.length !== 1) return;
-    selectedId.value = ids[0] ?? "";
-    modalMode.value = "view";
-    showModal.value = true;
-  };
+  * Delete By Id
+  * ========================== */
+  async function deleteById(id: number) {
+    try {
+      pending.value = true;
+      loadError.value = null;
+      await useApi(`/customer/delete?id=${id}`, {
+        method: "DELETE",
+      });
+      await fetchPagination();
+    } catch (e) {
+      loadError.value = e;
+    } finally {
+      pending.value = false;
+    }
+  }
 
   /** ===========================
    * RETURN EVERYTHING
@@ -67,8 +66,6 @@ export function useCustomer() {
     showModal,
     isEditOpen,
     modalMode,
-    selectedId,
-    selectedItem,
     pageNumber,
     pageSize,
     totalRecords,
@@ -76,7 +73,7 @@ export function useCustomer() {
 
     // actions
     fetchPagination,
-    viewById,
+    deleteById,
     pending,
     loadError,
   };
