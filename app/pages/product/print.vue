@@ -115,7 +115,7 @@ function generateBarcode() {
     format: 'CODE128',
     width: printSettings.barcodeWidth,
     height: printSettings.barcodeHeight,
-    displayValue: printSettings.showCodeText
+    displayValue: printSettings.showCodeText,
   })
 }
 
@@ -139,7 +139,7 @@ function regenerate() {
   })
 }
 
-// Auto regenerate when settings change
+// Auto Gen
 watch(
   () => [
     printType.value,
@@ -150,7 +150,6 @@ watch(
   regenerate
 )
 
-// ---------------- PRINT ----------------
 function printCode() {
   window.print()
 }
@@ -283,19 +282,18 @@ function printCode() {
           </div>
         </template>
 
-        <div class="flex flex-col items-center">
-          <div class="w-full text-center">
+        <div class="items-center justify-center flex">
+          <div class="text-center items-center justify-center flex flex-col bg-white text-black">
             <div v-if="printSettings.showName" class="font-semibold">
             {{ selectedProduct.name }}
             </div>
             <div v-if="printSettings.showPrice" class="font-semibold">
               Price: {{ selectedProduct.price }}
             </div>
-          </div>
-
-          <div class="print-only-code">
-            <svg v-if="printType === 'BARCODE'" ref="barcodeRef"></svg>
-            <canvas v-else ref="qrRef"></canvas>
+            <div>
+              <svg v-if="printType === 'BARCODE'" ref="barcodeRef"></svg>
+              <canvas v-else ref="qrRef"></canvas>
+            </div>
           </div>
         </div>
       </UCard>
