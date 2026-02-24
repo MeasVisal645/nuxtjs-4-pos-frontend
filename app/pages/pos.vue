@@ -428,7 +428,7 @@ function handlePrint() {
           </div>
 
           <UButton block size="xl" color="primary" class="font-bold h-16" :disabled="cart.length === 0" @click="handleCheckout">
-            Check out ${{ totalKHR.toFixed(2) }}
+            Check out {{ KHR(subtotalKHR) }}
           </UButton>
         </div>
       </template>
@@ -495,6 +495,7 @@ function handlePrint() {
               <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
                 <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
                 <span class="w-6 text-center text-xs font-bold">{{ item.quantity }}</span>
+                 <UInputNumber v-model="item.quantity" class="w-10 h-6 text-center" :min="1" :max="Number(item.quantity ?? 0)" @click.stop />
                 <UButton icon="i-lucide-plus" color="info" variant="ghost" size="xs" :disabled="item.quantity >= Number(item.product.quantity ?? 0)" @click.stop="updateQuantity(idx, 1)" />
               </div>
             </div>
@@ -503,14 +504,14 @@ function handlePrint() {
           <!-- Footer  -->
           <div class="p-4 border-t dark:border-gray-800 shrink-0 space-y-3">
             <div class="space-y-1 text-sm">
-              <div class="flex justify-between text-gray-500">
+              <!-- <div class="flex justify-between text-gray-500">
                 <span>Subtotal</span>
                 <span>{{ KHR(subtotalKHR) }} <span class="text-xs text-gray-400 ml-1">({{ USD(subtotalUSD) }})</span></span>
               </div>
               <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
                 <span>Tax (10%)</span>
                 <span>{{ KHR(taxKHR) }} ({{ USD(taxUSD) }})</span>
-              </div>
+              </div> -->
             </div>
             <div class="flex justify-between font-black text-2xl mb-2">
               <span>Total</span>
@@ -528,7 +529,7 @@ function handlePrint() {
             </div>
 
             <UButton block size="xl" color="primary" class="font-bold font-mono" :disabled="cart.length === 0" @click="handleCheckout">
-              Check out {{ KHR(totalKHR) }}
+              Check out {{ KHR(subtotalKHR) }}
             </UButton>
           </div>
         </div>

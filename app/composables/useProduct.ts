@@ -8,18 +8,6 @@ export function useProduct() {
   const products = ref<Product[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
-  const selectedId = ref<string>("");
-
-  const selectedItem = ref({
-    id: null,
-    code: "" as string | undefined,
-    name: "" as string | undefined,
-    cost: "" as string | undefined,
-    price: "" as string | undefined,
-    quantity: "" as string | undefined,
-    unit: "" as string | undefined,
-    active: "" as string | undefined,
-  });
 
   /** ===========================
    * Fetch All Product Pagination
@@ -60,17 +48,34 @@ export function useProduct() {
   watch([pageNumber, pageSize], fetchPagination);
 
   /** ===========================
+  * Delete By Id
+  * ========================== */
+  async function deleteById(id: number) {
+    try {
+      pending.value = true;
+      loadError.value = null;
+      await useApi(`/product/delete?id=${id}`, {
+        method: "DELETE",
+      });
+      await fetchPagination();
+    } catch (e) {
+      loadError.value = e;
+    } finally {
+      pending.value = false;
+    }
+  }
+
+  /** ===========================
    * RETURN EVERYTHING
    * ========================== */
   return {
-    // state
-    fetchPagination,
+    // data
     products,
+
+    // state
     showModal,
     isEditOpen,
     modalMode,
-    selectedId,
-    selectedItem,
     pageNumber,
     pageSize,
     totalRecords,
@@ -79,5 +84,8 @@ export function useProduct() {
     // actions
     pending,
     loadError,
+    fetchPagination,
+    deleteById,
+
   };
 }
