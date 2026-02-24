@@ -38,7 +38,6 @@ export function useEmployee() {
       totalRecords.value = res.totalRecords ?? 0;
       totalPages.value = res.totalPages ?? 0;
 
-      // keep these in sync if backend returns them
       pageNumber.value = res.pageNumber ?? pageNumber.value;
       pageSize.value = res.pageSize ?? pageSize.value;
     } catch (e) {
@@ -54,17 +53,31 @@ export function useEmployee() {
   onMounted(fetchPagination);
   watch([pageNumber, pageSize], fetchPagination);
 
+  /** ===========================
+  * Delete By Id
+  * ========================== */
+  async function deleteById(id: number) {
+    try {
+      pending.value = true;
+      loadError.value = null;
+      await useApi(`/employee/delete?id=${id}`, {
+        method: "DELETE",
+      });
+      await fetchPagination();
+    } catch (e) {
+      loadError.value = e;
+    } finally {
+      pending.value = false;
+    }
+  }
+
   return {
     // data
     employees,
-
-    // pagination
     pageNumber,
     pageSize,
     totalRecords,
     totalPages,
-
-    // ui state
     pending,
     loadError,
 
@@ -76,5 +89,6 @@ export function useEmployee() {
 
     // actions
     fetchPagination,
+    deleteById,
   };
 }

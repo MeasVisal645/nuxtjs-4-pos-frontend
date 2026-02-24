@@ -12,10 +12,10 @@ const {
   pageNumber,
   pageSize,
   totalRecords,
-  totalPages,
   modalOpen,
   selected,
-  openModal
+  openModal,
+  deleteById
 } = useEmployee()
 
 const toast = useToast()
@@ -67,6 +67,7 @@ function getRowItems(row: Row<EmployeeUser>) {
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
+        deleteById(row.original.employee.id)
         toast.add({
           title: 'Employee deleted',
           description: 'The employee has been deleted.'
@@ -135,7 +136,6 @@ const columns: TableColumn<EmployeeUser>[] = [
     id: 'details',
     header: 'Details',
     cell: ({ row }) => {
-      const count = row.original.employee
       return h(UButton, {
         label: `View`,
         size: 'xs',
