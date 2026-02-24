@@ -19,7 +19,7 @@ const selectedCategory = ref('All')
 const cart = ref<{ product: any; quantity: number }[]>([])
 const isPaymentModalOpen = ref(false)
 
-const KHR_RATE = 4100
+const KHR_RATE = 4000
 
 const customers = ref<Customer[]>([])
 const customerItems = ref<{ label: string; value: number }[]>([])
@@ -272,7 +272,7 @@ function handlePrint() {
     <!-- Product Section -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- Filters Header -->
-      <div class="flex items-center gap-3 mb-4 bg-white dark:bg-gray-900 p-2 rounded-xl shadow-sm">
+      <div class="flex items-center gap-3 mb-4 bg-white dark:bg-gray-900 h-16 p-4 rounded-xl shadow-sm">
         <div class="flex items-center gap-4 flex-1 min-w-0">
           <NuxtLink to="/" class="shrink-0">
             <UButton variant="ghost" color="neutral" icon="i-lucide-arrow-left" label="Back" />
@@ -289,17 +289,17 @@ function handlePrint() {
                 class="shrink-0"
                 :variant="selectedCategory === cat ? 'solid' : 'ghost'"
                 :color="selectedCategory === cat ? 'info' : 'neutral'"
-                size="sm"
+                size="md"
                 @click="selectedCategory = cat"
               />
             </div>
           </div>
         </div>
 
-        <div class="shrink-0">
+        <div class="shrink-0 ">
           <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search items..." class="w-72">
             <template #trailing v-if="searchQuery">
-              <UButton icon="i-lucide-x" variant="ghost" size="xs" @click="searchQuery=''" />
+              <UButton icon="i-lucide-x" variant="ghost" size="md" @click="searchQuery=''" />
             </template>
           </UInput>
         </div>
@@ -331,13 +331,13 @@ function handlePrint() {
               <UIcon v-else name="i-lucide-package" class="w-12 h-12 text-gray-400" />
             </div>
 
-            <div class="font-semibold truncate text-sm">{{ product.name }}</div>
+            <div class="font-semibold truncate text-md">{{ product.name }}</div>
 
             <div class="flex items-center justify-between mt-1">
-              <div class="text-info-600 dark:text-info-400 font-bold text-sm">
+              <div class="text-blue-800 dark:text-blue-500 font-bold text-md">
                 {{ KHR(product.price ?? 0) }}
               </div>
-              <div class="text-[11px]" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
+              <div class="text-sm" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
                 Stock: {{ product.quantity ?? 0 }}
               </div>
             </div>
@@ -356,7 +356,7 @@ function handlePrint() {
 
     <!-- CART: Desktop sidebar -->
     <UCard
-      class="hidden lg:flex w-120 flex-col h-full shadow-xl overflow-hidden"
+      class="hidden lg:flex w-130 flex-col h-full shadow-xl overflow-hidden"
       :ui="{
         body: 'flex-1 flex flex-col overflow-hidden',
         header: 'p-4 shrink-0',
@@ -374,7 +374,7 @@ function handlePrint() {
       </template>
 
       <div class="flex-1 overflow-y-auto space-y-4 no-scrollbar">
-        <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-black space-y-2 opacity-60">
+        <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-black dark:text-gray-500 space-y-2 opacity-60">
           <UIcon name="i-lucide-shopping-cart" class="w-16 h-16" />
           <p class="font-medium">No items added</p>
         </div>
@@ -384,18 +384,18 @@ function handlePrint() {
           :key="item.product.id"
           class="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2"
         >
-          <div class="w-12 h-12 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+          <div class="w-14 h-14 bg-white dark:bg-gray-800 rounded-md flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
             <img v-if="imgSrc(item.product)" :src="imgSrc(item.product)!" :alt="item.product.name" class="w-full h-full object-contain p-2" loading="lazy" />
             <UIcon v-else name="i-lucide-package" class="w-6 h-6 text-gray-400" />
           </div>
           <div class="flex-1 min-w-0">
-            <div class="font-semibold truncate text-sm">{{ item.product.name }}</div>
-            <div class="text-xs text-gray-500">{{ KHR(item.product.price ?? 0) }}</div>
+            <div class="font-semibold truncate text-md">{{ item.product.name }}</div>
+            <div class="text-md text-gray-500">{{ KHR(item.product.price ?? 0) }}</div>
           </div>
           <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
-            <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
-            <span class="w-6 text-center text-xs font-bold">{{ item.quantity }}</span>
-            <UButton icon="i-lucide-plus" color="info" variant="ghost" size="xs" :disabled="item.quantity >= Number(item.product.quantity ?? 0)" @click.stop="updateQuantity(idx, 1)" />
+            <UButton icon="i-lucide-minus" color="info" variant="ghost" size="md" @click.stop="updateQuantity(idx, -1)" />
+            <span class="w-6 text-center text-md font-bold">{{ item.quantity }}</span>
+            <UButton icon="i-lucide-plus" color="info" variant="ghost" size="md" :disabled="item.quantity >= Number(item.product.quantity ?? 0)" @click.stop="updateQuantity(idx, 1)" />
           </div>
         </div>
       </div>
@@ -403,22 +403,22 @@ function handlePrint() {
       <template #footer>
         <div class="space-y-3">
           <div class="space-y-1 text-sm">
-            <div class="flex justify-between text-gray-500">
+            <!-- <div class="flex justify-between text-gray-500">
               <span>Subtotal</span>
               <span>{{ KHR(subtotalKHR) }} <span class="text-xs text-gray-400 ml-1">({{ USD(subtotalUSD) }})</span></span>
-            </div>
-            <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
+            </div> -->
+            <!-- <div class="flex justify-between text-gray-500 border-b dark:border-gray-800 pb-2">
               <span>Tax (10%)</span>
               <span>{{ KHR(taxKHR) }} ({{ USD(taxUSD) }})</span>
-            </div>
+            </div> -->
           </div>
           <div class="flex justify-between font-black text-2xl mb-2">
             <span>Total</span>
-            <span class="text-info-600">{{ KHR(totalKHR) }} ({{ USD(totalUSD) }})</span>
+            <span class="text-info-600">{{ KHR(subtotalKHR) }} ({{ USD(subtotalUSD) }})</span>
           </div>
 
           <!-- Print & Clear -->
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 h-12 gap-2">
             <UButton block color="neutral" variant="outline" icon="i-lucide-printer" :disabled="cart.length === 0" @click="handlePrint">
               Print
             </UButton>
@@ -427,7 +427,7 @@ function handlePrint() {
             </UButton>
           </div>
 
-          <UButton block size="xl" color="primary" class="font-bold" :disabled="cart.length === 0" @click="handleCheckout">
+          <UButton block size="xl" color="primary" class="font-bold h-16" :disabled="cart.length === 0" @click="handleCheckout">
             Check out ${{ totalKHR.toFixed(2) }}
           </UButton>
         </div>
@@ -527,8 +527,8 @@ function handlePrint() {
               </UButton>
             </div>
 
-            <UButton block size="xl" color="primary" class="font-bold" :disabled="cart.length === 0" @click="handleCheckout">
-              Check out ${{ totalKHR.toFixed(2) }}
+            <UButton block size="xl" color="primary" class="font-bold font-mono" :disabled="cart.length === 0" @click="handleCheckout">
+              Check out {{ KHR(totalKHR) }}
             </UButton>
           </div>
         </div>

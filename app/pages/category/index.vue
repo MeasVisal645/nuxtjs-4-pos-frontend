@@ -12,13 +12,11 @@ const {
   pageNumber,
   pageSize,
   totalRecords,
-  totalPages
+  deleteById
 } = useCategory()
 
 const toast = useToast()
 
-const selectedCategory = ref<Category | null>(null)
-const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
 
@@ -50,17 +48,6 @@ function getRowItems(row: Row<Category>) {
       type: 'separator'
     },
     {
-      label: 'View Category Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedCategory.value = row.original
-        viewModalOpen.value = true     
-      }
-    },
-    {
-      type: 'separator'
-    },
-    {
       label: 'Edit Category',
       icon: 'i-lucide-pencil',
       onSelect() {
@@ -76,6 +63,7 @@ function getRowItems(row: Row<Category>) {
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
+        deleteById(row.original.id)
         toast.add({
           title: 'Category deleted',
           description: 'The category has been deleted.'
