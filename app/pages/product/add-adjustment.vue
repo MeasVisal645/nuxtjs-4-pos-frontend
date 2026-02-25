@@ -20,7 +20,7 @@ type AdjustmentItem = {
 
 const toast = useToast()
 
-// ---------- Load products once (for dropdown search) ----------
+// ---------- Load products ----------
 const products = ref<Product[]>([])
 const loadingProducts = ref(false)
 
@@ -41,34 +41,11 @@ async function loadProducts() {
   }
 }
 
-onMounted(() => loadProducts())
+onMounted(loadProducts)
 
-// ---------- Search dropdown ----------
-const codeQuery = ref('')
+// ---------- Search ----------
+const searchQuery = ref('')
 const showDropdown = ref(false)
-
-function scoreMatch(code: string, q: string) {
-  // higher = better
-  if (code === q) return 1000
-  if (code.startsWith(q)) return 800
-  if (code.includes(q)) return 400
-  return 0
-}
-
-const suggestions = computed(() => {
-  const q = codeQuery.value.trim().toLowerCase()
-  if (!q) return []
-
-  return products.value
-    .map(p => ({
-      p,
-      score: scoreMatch(String(p.code).toLowerCase(), q)
-    }))
-    .filter(x => x.score > 0)
-    .sort((a, b) => b.score - a.score) // best match first
-    .slice(0, 5) // only 5 most match
-    .map(x => x.p)
-})
 
 function openDropdown() {
   showDropdown.value = true
@@ -78,15 +55,28 @@ function closeDropdown() {
   showDropdown.value = false
 }
 
+const filteredAllProducts = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim()
+  return products.value.filter(p => {
+    const name = p.name.toLowerCase()
+    const code = p.code.toLowerCase()
+    return !query || name.includes(query) || code.includes(query)
+  })
+})
+
+const suggestions = computed(() => filteredAllProducts.value.slice(0, 5))
+
 // ---------- Table items ----------
 const items = ref<AdjustmentItem[]>([])
 const submitting = ref(false)
 
 function addProduct(p: Product) {
+  if (!p) return
+
   const exists = items.value.some(i => i.code === p.code)
   if (exists) {
     toast.add({ title: 'Already added', description: `${p.code} already exists`, color: 'warning' })
-    codeQuery.value = ''
+    searchQuery.value = ''
     closeDropdown()
     return
   }
@@ -100,7 +90,7 @@ function addProduct(p: Product) {
     qty: 1
   })
 
-  codeQuery.value = ''
+  searchQuery.value = ''
   closeDropdown()
 }
 
@@ -109,15 +99,10 @@ function removeItem(index: number) {
 }
 
 function searchByCode() {
-  const q = codeQuery.value.trim()
-  if (!q) return
-
-  const list = suggestions.value
-
+  const list = filteredAllProducts.value
   if (list.length === 1) {
     const product = list[0]
-    if (!product) return
-    addProduct(product)
+    if (product) addProduct(product)
     return
   }
 
@@ -129,27 +114,14 @@ function searchByCode() {
   toast.add({ title: 'Multiple matches', description: 'Please select a product', color: 'info' })
 }
 
-
-
 // ---------- Validation ----------
 function rowError(it: AdjustmentItem): string | null {
   const qty = Number(it.qty)
-
-  if (!Number.isFinite(qty)) {
-    return 'Quantity is invalid'
-  }
-
-  if (it.method === 'ADD') {
-    if (qty <= 0) return 'Qty must be > 0'
-  }
-
-  if (it.method === 'SUBTRACT') {
-    if (qty < 0) return 'Qty must be ≥ 0'
-  }
-
+  if (!Number.isFinite(qty)) return 'Quantity is invalid'
+  if (it.method === 'ADD' && qty <= 0) return 'Qty must be > 0'
+  if (it.method === 'SUBTRACT' && qty < 0) return 'Qty must be ≥ 0'
   return null
 }
-
 
 const canSubmit = computed(() => {
   if (items.value.length === 0) return false
@@ -176,7 +148,7 @@ async function submitAdjustments() {
 
     toast.add({ title: 'Success', description: 'Quantity adjusted successfully' })
     items.value = []
-    codeQuery.value = ''
+    searchQuery.value = ''
   } catch (e: any) {
     toast.add({
       title: 'Failed',
@@ -199,14 +171,14 @@ async function submitAdjustments() {
         <template #right />
       </UDashboardNavbar>
     </template>
-      
+
     <template #body>
-      <div class="relative justify-between">
-        <div class="flex flex-row gap-2 w-full">
+      <div class="relative mb-4">
+        <div class="flex gap-2">
           <UInput
-            v-model="codeQuery"
+            v-model="searchQuery"
             icon="i-lucide-search"
-            placeholder="Search product code"
+            placeholder="Search product code or name"
             @focus="openDropdown"
             :loading="loadingProducts"
             :disabled="loadingProducts"
@@ -214,12 +186,11 @@ async function submitAdjustments() {
           />
           <UButton label="Search" :disabled="loadingProducts" @click="searchByCode" />
         </div>
-        
 
-        <!-- Suggestions now take space -->
+        <!-- Dropdown Suggestions -->
         <div
-          v-if="showDropdown && suggestions.length && codeQuery"
-          class="rounded-md bg-white dark:bg-gray-900 shadow-sm max-h-64 overflow-y-auto"
+          v-if="showDropdown && suggestions.length && searchQuery"
+          class="rounded-md bg-white dark:bg-gray-900 shadow-sm max-h-64 overflow-y-auto mt-1"
         >
           <button
             v-for="p in suggestions"
@@ -234,45 +205,13 @@ async function submitAdjustments() {
         </div>
       </div>
 
-
-      <!-- <div class="relative flex gap-2 overflow-visible">
-        <UInput
-          v-model="codeQuery"
-          class="w-72"
-          icon="i-lucide-search"
-          placeholder="Search product code"
-          :loading="loadingProducts"
-          :disabled="loadingProducts"
-          @focus="openDropdown"
-          @keydown.enter.prevent="searchByCode"
-        />
-        <UButton label="Search" :disabled="loadingProducts" @click="searchByCode" />
-
-        <div
-          v-if="showDropdown && suggestions.length && codeQuery"
-          class="absolute left-0 top-full mt-2 w-72 rounded-md border border-default bg-white dark:bg-gray-900 shadow-md max-h-64 overflow-y-auto z-9999"
-        >
-          <button
-            v-for="p in suggestions"
-            :key="p.code"
-            type="button"
-            class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-            @mousedown.prevent="addProduct(p)"
-          >
-            <div class="text-sm font-medium text-black dark:text-white">
-              {{ p.name }} <span class="font-semibold">{{ p.code }}</span>
-            </div>
-          </button>
-        </div>
-      </div> -->
-      <!-- Body Content -->
       <UCard>
         <template #header>
           <div class="flex justify-between items-center">
             <div>
               <div class="font-semibold">Adjustment Items</div>
               <div class="text-sm text-muted">
-                Please fill in the information below. The field labels marked with * are required input fields.
+                Fill in the information below. Fields marked with * are required.
               </div>
             </div>
             <UButton
@@ -302,15 +241,10 @@ async function submitAdjustments() {
           </thead>
 
           <tbody>
-            <tr
-              v-for="(item, i) in items"
-              :key="item.code"
-              class="border-b"
-            >
+            <tr v-for="(item, i) in items" :key="item.code" class="border-b">
               <td class="py-2">{{ item.name }}</td>
               <td class="font-medium">{{ item.code }}</td>
-              <td class="">{{ item.price }}</td>
-
+              <td>{{ item.price }}</td>
               <td>
                 <USelect
                   v-model="item.method"
@@ -321,26 +255,14 @@ async function submitAdjustments() {
                   class="w-32"
                 />
               </td>
-
               <td>
-                <UInput
-                  type="number"
-                  v-model.number="item.qty"
-                  min="1"
-                  placeholder="Qty"
-                />
+                <UInput type="number" v-model.number="item.qty" min="1" placeholder="Qty" />
                 <div v-if="rowError(item)" class="text-xs text-red-600 mt-1">
                   {{ rowError(item) }}
                 </div>
               </td>
-
               <td class="text-right">
-                <UButton
-                  icon="i-lucide-trash"
-                  color="error"
-                  variant="ghost"
-                  @click="removeItem(i)"
-                />
+                <UButton icon="i-lucide-trash" color="error" variant="ghost" @click="removeItem(i)" />
               </td>
             </tr>
           </tbody>

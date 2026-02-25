@@ -20,13 +20,14 @@ const printType = ref<PrintType>('BARCODE')
 
 const printSettings = reactive({
   pageSize: 'CUSTOM',
-  customWidth: 25,  // mm
-  customHeight: 15, // mm
-  barcodeWidth: 2,
-  barcodeHeight: 40,
+  customWidth: 25,      // mm
+  customHeight: 15,     // mm
+  barcodeWidth: 1.5,
+  barcodeHeight: 20,
   showName: true,
   showPrice: true,
-  showCodeText: true
+  showCode: false,
+  fontSize: 14,     
 })
 
 // ---------------- LOAD PRODUCTS ----------------
@@ -115,7 +116,7 @@ function generateBarcode() {
     format: 'CODE128',
     width: printSettings.barcodeWidth,
     height: printSettings.barcodeHeight,
-    displayValue: printSettings.showCodeText,
+    displayValue: printSettings.showCode,
   })
 }
 
@@ -139,13 +140,13 @@ function regenerate() {
   })
 }
 
-// Auto Gen
 watch(
   () => [
     printType.value,
     printSettings.barcodeWidth,
     printSettings.barcodeHeight,
-    printSettings.showCodeText
+    printSettings.showCode,
+    printSettings.fontSize,
   ],
   regenerate
 )
@@ -167,7 +168,7 @@ function printCode() {
 
     <template #body>
       <!-- SEARCH -->
-      <div class="relative mb-6">
+      <div class="relative">
         <div class="flex gap-2">
           <UInput
             v-model="codeQuery"
@@ -198,7 +199,7 @@ function printCode() {
       </div>
 
       <!-- SETTINGS -->
-      <UCard class="mb-6">
+      <UCard>
         <template #header>
           <div class="font-semibold">Print Settings</div>
         </template>
@@ -228,38 +229,65 @@ function printCode() {
             />
           </div>
 
-          <div class="flex flex-col gap-2">
+          <div>
             <span>Paper Size: </span>
-            <UInput
-              type="number"
-              v-model.number="printSettings.customWidth"
-              placeholder="Label Width (mm)"
-            />
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex w-full flex-col">
+                <span class="text-xs">width</span>
+                <UInput
+                  type="number"
+                  v-model.number="printSettings.customWidth"
+                  placeholder="Label Width (mm)"
+                />
+                
+              </div>
+              <div class="flex w-full flex-col">
+                <span class="text-xs">Height</span>
+                <UInput
+                  type="number"
+                  v-model.number="printSettings.customHeight"
+                  placeholder="Label Height (mm)"
+                />
+              </div>
+            </div>
+          </div>
 
-            <UInput
-              type="number"
-              v-model.number="printSettings.customHeight"
-              placeholder="Label Height (mm)"
-            />
+          <div>
+            <span>Barcode Size: </span>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="flex w-full flex-col">
+                <span class="text-xs">width</span>
+                <UInput
+                  type="number"
+                  v-model.number="printSettings.barcodeWidth"
+                  placeholder="Barcode Width"
+                />
+              </div>
+              <div class="flex w-full flex-col">
+                <span class="text-xs">Height</span>
+                <UInput
+                  type="number"
+                  v-model.number="printSettings.barcodeHeight"
+                  placeholder="Barcode Height"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <span>Font Size:</span>
+            <UInput type="number" v-model.number="printSettings.fontSize" />
+          </div>
+
+          <div class="flex flex-col col-span-2 w-full gap-4">
+            <span>Visibility:</span>
+            <div class="flex flex-row gap-4">
+              <UCheckbox v-model="printSettings.showName" label="Product Name" />
+              <UCheckbox v-model="printSettings.showPrice" label="Price" />
+              <UCheckbox v-model="printSettings.showCode" label="Code" />
+            </div>
           </div>
           
-          <div class="flex flex-col gap-2">
-            <span>Barcode Size: </span>
-            <UInput
-              type="number"
-              v-model.number="printSettings.barcodeWidth"
-              placeholder="Barcode Width"
-            />
-            <UInput
-              type="number"
-              v-model.number="printSettings.barcodeHeight"
-              placeholder="Barcode Height"
-            />
-          </div>
-
-          <UCheckbox v-model="printSettings.showName" label="Show Product Name" />
-          <UCheckbox v-model="printSettings.showPrice" label="Show Price" />
-          <UCheckbox v-model="printSettings.showCodeText" label="Show Code" />
         </div>
       </UCard>
 
@@ -284,12 +312,22 @@ function printCode() {
 
         <div class="items-center justify-center flex">
           <div class="text-center items-center justify-center flex flex-col bg-white text-black">
-            <div v-if="printSettings.showName" class="font-semibold">
-            {{ selectedProduct.name }}
+            <div
+              v-if="printSettings.showName"
+              class="font-semibold"
+              :style="{ fontSize: printSettings.fontSize + 'px' }"
+            >
+              {{ selectedProduct.name }}
             </div>
-            <div v-if="printSettings.showPrice" class="font-semibold">
+
+            <div
+              v-if="printSettings.showPrice"
+              class="font-semibold -mb-1"
+              :style="{ fontSize: printSettings.fontSize + 'px' }"
+            >
               Price: {{ selectedProduct.price }}
             </div>
+
             <div>
               <svg v-if="printType === 'BARCODE'" ref="barcodeRef"></svg>
               <canvas v-else ref="qrRef"></canvas>
@@ -303,23 +341,14 @@ function printCode() {
 
 <style>
 @media print {
+  @page { margin: 0; }
 
-  @page {
-    margin: 0;
-  }
-
-  body * {
-    visibility: hidden;
-  }
+  body * { visibility: hidden; }
 
   .print-area,
-  .print-area * {
-    visibility: visible;
-  }
+  .print-area * { visibility: visible; }
 
-  .no-print {
-    display: none !important;
-  }
+  .no-print { display: none !important; }
 
   .print-area {
     position: absolute;
@@ -329,12 +358,7 @@ function printCode() {
     text-align: center;
   }
 
-  .print-58MM {
-    width: 58mm;
-  }
-
-  .print-80MM {
-    width: 80mm;
-  }
+  .print-58MM { width: 58mm; }
+  .print-80MM { width: 80mm; }
 }
 </style>
