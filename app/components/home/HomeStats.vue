@@ -12,16 +12,30 @@ const props = defineProps<{
   range: Range
 }>()
 
+// ---- TYPES ----
 type ApiRow = { totalSale: number; saleDate: string }
-
-type DataRecord = {
-  date: Date
-  amount: number
+type DataRecord = { date: Date; amount: number }
+type Dashboard = {
+  totalCustomers: number
+  totalSales: number
+  totalOrders: number
+  totalProducts: number
+}
+type StatKey = keyof Dashboard
+type StatDef = {
+  key: StatKey
+  title: string
+  icon: string
+  to: string
+  formatter?: (v: number) => string
 }
 
+// ---- REFS ----
 const data = ref<DataRecord[]>([])
 const pending = ref(false)
+const stats = ref<(Stat & { to: string })[]>([])
 
+// ---- HELPERS ----
 function formatCurrency(value: number): string {
   return value.toLocaleString('en-US', {
     style: 'currency',
@@ -30,7 +44,6 @@ function formatCurrency(value: number): string {
   })
 }
 
-// ---- bucket helpers ----
 function bucketKey(date: Date, period: Period) {
   if (period === 'daily') return format(date, 'yyyy-MM-dd')
   if (period === 'weekly') return format(date, "yyyy-'W'II")
@@ -43,13 +56,14 @@ function bucketStart(date: Date, period: Period) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-// ---- revenue loader ----
+// ---- REVENUE LOADER ----
 async function loadRevenue() {
   try {
     pending.value = true
 
     const startDate = format(props.range.start, 'yyyy-MM-dd')
-    const endDate = format(props.range.end, 'yyyy-MM-dd')
+    // Add 1 day to endDate to handle 23:59:59 issue
+    const endDate = format(new Date(props.range.end.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
 
     const rows = await useApi<ApiRow[]>('/order/date', {
       params: { startDate, endDate }
@@ -86,30 +100,14 @@ async function loadRevenue() {
   }
 }
 
+// Auto reload revenue on period/range change
 watch(
   () => [props.period, props.range.start.getTime(), props.range.end.getTime()],
   loadRevenue,
   { immediate: true }
 )
 
-// ---- dashboard stats ----
-type Dashboard = {
-  totalCustomers: number
-  totalSales: number
-  totalOrders: number
-  totalProducts: number
-}
-
-type StatKey = keyof Dashboard
-
-type StatDef = {
-  key: StatKey
-  title: string
-  icon: string
-  to: string
-  formatter?: (v: number) => string
-}
-
+// ---- DASHBOARD STATS ----
 const statDefs: StatDef[] = [
   { key: 'totalCustomers', title: 'Customers', icon: 'i-lucide-users', to: '/customer' },
   { key: 'totalProducts', title: 'Products', icon: 'i-lucide-chart-pie', to: '/product' },
@@ -117,24 +115,16 @@ const statDefs: StatDef[] = [
   { key: 'totalOrders', title: 'Orders', icon: 'i-lucide-shopping-cart', to: '/report/sale-report' }
 ]
 
-// ✅ make key depend on range so it refreshes properly
-const statsKey = computed(() => {
-  const s = props.range.start.getTime()
-  const e = props.range.end.getTime()
-  return `stats:${s}:${e}`
-})
-
-const { data: stats } = await useAsyncData<(Stat & { to: string })[]>(
-  statsKey,
-  async () => {
+async function loadStats() {
+  try {
     const startDate = format(props.range.start, 'yyyy-MM-dd')
-    const endDate = format(props.range.end, 'yyyy-MM-dd')
+    const endDate = format(new Date(props.range.end.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
 
     const d = await useApi<Dashboard>('/dashboard/all', {
       params: { startDate, endDate }
     })
 
-    return statDefs.map((def) => {
+    stats.value = statDefs.map(def => {
       const num = Number(d?.[def.key] ?? 0)
       return {
         title: def.title,
@@ -144,19 +134,23 @@ const { data: stats } = await useAsyncData<(Stat & { to: string })[]>(
         to: def.to
       }
     })
-  },
-  {
-    watch: [() => props.range.start.getTime(), () => props.range.end.getTime()],
-    default: () => []
+  } catch (e) {
+    console.error('Failed to load stats:', e)
+    stats.value = []
   }
-)
+}
+
+// Auto reload stats on range change
+watch([() => props.range.start, () => props.range.end], loadStats, { immediate: true })
+
 </script>
 
 <template>
-  <UPageGrid class="lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-px">
+  <!-- DASHBOARD STATS GRID -->
+  <UPageGrid v-if="stats.length" class="lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-px">
     <UPageCard
-      v-for="(stat, index) in stats"
-      :key="index"
+      v-for="stat in stats"
+      :key="stat.title"
       :icon="stat.icon"
       :title="stat.title"
       :to="stat.to"
