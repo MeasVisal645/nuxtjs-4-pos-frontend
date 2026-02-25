@@ -295,14 +295,6 @@ function handlePrint() {
             </div>
           </div>
         </div>
-
-        <div class="shrink-0 ">
-          <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search items..." class="w-72">
-            <template #trailing v-if="searchQuery">
-              <UButton icon="i-lucide-x" variant="ghost" size="md" @click="searchQuery=''" />
-            </template>
-          </UInput>
-        </div>
       </div>
 
       <!-- Products Grid -->
@@ -337,9 +329,9 @@ function handlePrint() {
               <div class="text-blue-800 dark:text-blue-500 font-bold text-md">
                 {{ KHR(product.price ?? 0) }}
               </div>
-              <div class="text-sm" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
+              <!-- <div class="text-sm" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
                 Stock: {{ product.quantity ?? 0 }}
-              </div>
+              </div> -->
             </div>
           </UCard>
         </div>
@@ -370,6 +362,13 @@ function handlePrint() {
         </div>
         <div class="mt-3">
           <USelect v-model="selectedCustomerId" :items="customerItems" placeholder="Select customer" class="w-full" />
+        </div>
+        <div class="shrink-0 mt-3">
+          <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search..." class="w-full" size="md">
+            <template #trailing v-if="searchQuery">
+              <UButton icon="i-lucide-x" variant="ghost" size="md" @click="searchQuery=''" />
+            </template>
+          </UInput>
         </div>
       </template>
 

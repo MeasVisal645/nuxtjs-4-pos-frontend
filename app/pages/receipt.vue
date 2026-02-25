@@ -3,6 +3,7 @@ definePageMeta({
   layout: "blank"
 })
 
+const Logo = ref("Logo.png")
 const route = useRoute()
 const order = computed(() => {
   const raw = route.query.data
@@ -37,7 +38,7 @@ const print = () => {
           </UButton>
         </div>
         <NuxtImg
-          src="https://cdn.my-pos-sys.store/Logo.png"
+          :src="Logo"
           width="150px"
           class="mx-auto mb-2 object-contain"
         />
