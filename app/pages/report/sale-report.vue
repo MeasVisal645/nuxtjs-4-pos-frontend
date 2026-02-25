@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { OrderItems, OrderItemDetails } from '~/types'
 import toArray from '~/utils/helper'
@@ -48,7 +47,6 @@ const viewModalOpen = ref(false)
 
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
-const UDropdownMenu = resolveComponent('UDropdownMenu')
 
 const table = useTemplateRef('table')
 
@@ -154,7 +152,7 @@ const search = computed({
 })
 
 // ---------- Date Range Filter ----------
-import { CalendarDate, DateFormatter } from '@internationalized/date'
+import { CalendarDate } from '@internationalized/date'
 
 const dateRange = shallowRef<{ start: CalendarDate | undefined; end: CalendarDate | undefined }>({
   start: undefined,
@@ -222,30 +220,6 @@ function clearDateFilter() {
             size="sm"
             @click="clearDateFilter"
           />
-        </div>
-
-        <div class="gap-2 flex">
-          <UDropdownMenu
-            :items="
-              table?.tableApi
-                ?.getAllColumns()
-                .filter((column: any) => column.getCanHide())
-                .map((column: any) => ({
-                  label: upperFirst(column.id),
-                  type: 'checkbox' as const,
-                  checked: column.getIsVisible(),
-                  onUpdateChecked(checked: boolean) {
-                    table?.tableApi?.getColumn(column.id)?.toggleVisibility(!!checked)
-                  },
-                  onSelect(e?: Event) {
-                    e?.preventDefault()
-                  }
-                }))
-            "
-            :content="{ align: 'end' }"
-          >
-            <UButton label="Display" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
-          </UDropdownMenu>
         </div>
       </div>
 
