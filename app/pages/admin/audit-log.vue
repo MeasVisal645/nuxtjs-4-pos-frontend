@@ -13,7 +13,6 @@ const {
 } = useAuditLog()
 
 const UBadge = resolveComponent('UBadge')
-const UCheckbox = resolveComponent('UCheckbox')
 
 const table = useTemplateRef('table')
 
@@ -29,24 +28,6 @@ const pagination = ref({
 })
 
 const columns: TableColumn<AuditLog>[] = [
-  {
-    id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        modelValue: table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all'
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        modelValue: row.getIsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-        ariaLabel: 'Select row'
-      })
-  },
   {
     id: 'no',
     header: 'No',

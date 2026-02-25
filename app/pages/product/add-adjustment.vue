@@ -178,7 +178,7 @@ async function submitAdjustments() {
           <UInput
             v-model="searchQuery"
             icon="i-lucide-search"
-            placeholder="Search product code or name"
+            placeholder="Search..."
             @focus="openDropdown"
             :loading="loadingProducts"
             :disabled="loadingProducts"
