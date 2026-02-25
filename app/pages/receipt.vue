@@ -44,7 +44,7 @@ const print = () => {
         />
 
         <h1 class="font-bold text-lg uppercase text-black">Receipt</h1>
-        <p class="text-black">{{ new Date(order.date).toLocaleString() }}</p>
+        <p class="text-black">{{ formatDateTime(order.date) }}</p>
       </div>
 
       <div>
