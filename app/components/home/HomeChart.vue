@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format } from 'date-fns'
+import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format, addDays, startOfDay, startOfMonth, startOfWeek } from 'date-fns'
 import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
 import type { Period, Range } from '~/types'
 
@@ -38,6 +38,8 @@ const formatDate = (date: Date): string => {
 function bucketKey(date: Date, period: Period) {
   if (period === 'daily') return format(date, 'yyyy-MM-dd')
   if (period === 'weekly') return format(date, "yyyy-'W'II")
+  if (period === 'monthly') return format(date, "yyyy-'W'II")
+
   return format(date, 'yyyy-MM')
 }
 
@@ -53,11 +55,14 @@ async function loadRevenue() {
   try {
     pending.value = true
 
-    const start = format(props.range.start, 'yyyy-MM-dd')
-    const end = format(props.range.end, 'yyyy-MM-dd')
+    const start = props.range.start
+    const end = addDays(props.range.end, 1)
+
+    const startStr = format(start, 'yyyy-MM-dd')
+    const endStr = format(end, 'yyyy-MM-dd')
 
     const rows = await useApi<ApiRow[]>('/order/date', {
-      params: { startDate: start, endDate: end }
+      params: { startDate: startStr, endDate: endStr }
     })
 
     const list = (rows ?? []).map(r => ({
@@ -65,23 +70,27 @@ async function loadRevenue() {
       date: new Date(r.saleDate)
     }))
 
-    // 1) Create all buckets for the range
-    const datesFn = ({
+    const datesFn: Record<Period, (interval: { start: Date; end: Date }) => Date[]> = {
       daily: eachDayOfInterval,
       weekly: eachWeekOfInterval,
       monthly: eachMonthOfInterval
-    } as Record<Period, typeof eachDayOfInterval>)[props.period]
+    }
 
-    const buckets = datesFn(props.range).map(d => bucketStart(d, props.period))
+    const bucketsRaw = datesFn[props.period]({ start, end })
 
-    // 2) Sum API rows into buckets
+    const buckets = bucketsRaw.map(d => {
+      if (props.period === 'daily') return startOfDay(d)
+      if (props.period === 'weekly') return startOfWeek(d, { weekStartsOn: 1 }) // Monday
+      return startOfMonth(d)
+    })
+
     const sums = new Map<string, number>()
     for (const item of list) {
       const key = bucketKey(item.date, props.period)
       sums.set(key, (sums.get(key) ?? 0) + item.amount)
     }
 
-    // 3) Output chart data
+    // Output chart data
     data.value = buckets.map(d => ({
       date: d,
       amount: sums.get(bucketKey(d, props.period)) ?? 0
@@ -101,17 +110,29 @@ watch(
 )
 
 // --- Unovis accessors ---
-const x = (_: DataRecord, i: number) => i
-const y = (d: DataRecord) => d.amount
+const x = (_: DataRecord | undefined, i: number) => {
+  if (!data.value[i]) return i 
+  return i
+}
+
+const y = (d: DataRecord | undefined) => {
+  if (!d) return 0 
+  return d.amount
+}
 
 const total = computed(() => data.value.reduce((acc, d) => acc + d.amount, 0))
 
 const xTicks = (i: number) => {
-  if (i === 0 || i === data.value.length - 1 || !data.value[i]) return ''
-  return formatDate(data.value[i].date)
+  const item = data.value[i]
+  if (!item) return ''
+  if (i === 0 || i === data.value.length - 1) return ''
+  return formatDate(item.date)
 }
 
-const template = (d: DataRecord) => `${formatDate(d.date)}: ${formatNumber(d.amount)}`
+const template = (d?: DataRecord) => {
+  if (!d) return ''
+  return `${formatDate(d.date)}: ${formatNumber(d.amount)}`
+}
 </script>
 
 <template>

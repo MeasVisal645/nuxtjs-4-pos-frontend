@@ -329,9 +329,6 @@ function handlePrint() {
               <div class="text-blue-800 dark:text-blue-500 font-bold text-md">
                 {{ KHR(product.price ?? 0) }}
               </div>
-              <!-- <div class="text-sm" :class="isOutOfStock(product) ? 'text-red-600' : 'text-gray-500'">
-                Stock: {{ product.quantity ?? 0 }}
-              </div> -->
             </div>
           </UCard>
         </div>
@@ -360,9 +357,11 @@ function handlePrint() {
           <h2 class="font-bold text-lg">Order</h2>
           <UBadge color="info" variant="subtle" size="lg">{{ totalItems }} items</UBadge>
         </div>
+        <!-- Select Customer -->
         <div class="mt-3">
           <USelect v-model="selectedCustomerId" :items="customerItems" placeholder="Select customer" class="w-full" />
         </div>
+        <!-- Search -->
         <div class="shrink-0 mt-3">
           <UInput v-model="searchQuery" icon="i-lucide-search" placeholder="Search..." class="w-full" size="md">
             <template #trailing v-if="searchQuery">
@@ -370,6 +369,7 @@ function handlePrint() {
             </template>
           </UInput>
         </div>
+
       </template>
 
       <div class="flex-1 overflow-y-auto space-y-4 no-scrollbar">
