@@ -227,7 +227,7 @@ async function fetchExportData(mode: 'range' | 'all') {
         </div>
 
         <ExportCsvButton
-          filename="sale-report"
+          filename="pos-sale-report"
           :range="range"
           :headers="['No', 'Order No', 'Sale By', 'Paid', 'Date', 'Product Code', 'Product Name', 'Quantity', 'Payment Method', 'Total']"
           :fetch-data="fetchExportData"
