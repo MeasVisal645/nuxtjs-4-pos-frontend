@@ -126,7 +126,6 @@ const columns: TableColumn<OrderItemDetails>[] = [
   }
 ]
 
-// ---------- FLATTEN DATA FOR EXPORT ----------
 // ---------- FETCH DATA FOR EXPORT ----------
 async function fetchExportData(mode: 'range' | 'all') {
   const query = new URLSearchParams({
@@ -148,6 +147,7 @@ async function fetchExportData(mode: 'range' | 'all') {
   const res = await useApi<{ content: OrderItemDetails[] }>(`/order?${query.toString()}`)
   const rows = res?.content ?? []
 
+  // ---------- FLATTEN DATA FOR EXPORT ----------
   const flattened: Record<string, unknown>[] = []
 
   rows.forEach((item, orderIndex) => {
