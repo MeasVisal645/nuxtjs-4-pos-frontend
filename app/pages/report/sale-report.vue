@@ -5,6 +5,7 @@ import type { OrderItemDetails, Period, Range } from '~/types'
 import toArray from '~/utils/helper'
 import { sub } from 'date-fns'
 
+type Product = { id: number; name: string; code: string; price: number }
 type User = { id: number; username: string }
 
 const range = ref<Range>({
@@ -43,11 +44,20 @@ watch(range, () => {
 
 // ---------- LOOKUPS ----------
 const users = ref<User[]>([])
+const products = ref<Product[]>([])
 
 async function loadLookups() {
-  const userRes = await useApi('/user/all')
+  const [userRes, productRes] = await Promise.all([
+    useApi('/user/all'),
+    useApi('/product/all'),
+  ])
   users.value = toArray<User>(userRes)
+  products.value = toArray<Product>(productRes)
 }
+
+const productById = computed<Record<number, Product>>(() =>
+  Object.fromEntries(products.value.map(p => [Number(p.id), p]))
+)
 
 onMounted(loadLookups)
 
@@ -115,6 +125,69 @@ const columns: TableColumn<OrderItemDetails>[] = [
       })
   }
 ]
+
+// ---------- FLATTEN DATA FOR EXPORT ----------
+// ---------- FETCH DATA FOR EXPORT ----------
+async function fetchExportData(mode: 'range' | 'all') {
+  const query = new URLSearchParams({
+    pageNumber: '1',
+    pageSize: '999999',
+  })
+
+  if (mode === 'range') {
+    const startDate = range.value?.start
+    const endDate = range.value?.end
+    if (startDate) query.append('startDate', startDate.toISOString().slice(0, 10))
+    if (endDate) query.append('endDate', endDate.toISOString().slice(0, 10))
+  }
+
+  if (search.value?.trim()) {
+    query.append('search', search.value.trim())
+  }
+
+  const res = await useApi<{ content: OrderItemDetails[] }>(`/order?${query.toString()}`)
+  const rows = res?.content ?? []
+
+  const flattened: Record<string, unknown>[] = []
+
+  rows.forEach((item, orderIndex) => {
+    const d = new Date(item.orderItems.createdDate)
+    const date = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+
+    const orderBase = {
+      no: orderIndex + 1,
+      orderNo: item.orderItems.orderNo,
+      saleBy: userNameById.value[item.orderItems.userId] ?? `#${item.orderItems.userId}`,
+      paid: item.orderItems.paid ? 'Paid' : 'Unpaid',
+      date,
+    }
+
+    if (item.orderDetails.length > 0) {
+      item.orderDetails.forEach((detail) => {
+        const product = productById.value[detail.productId]
+        flattened.push({
+          ...orderBase,
+          productCode: product?.code ?? `#${detail.productId}`,
+          productName: product?.name ?? `#${detail.productId}`,
+          quantity: detail.quantity,
+          paymentMethod: detail.paymentMethod,
+          total: detail.total,
+        })
+      })
+    } else {
+      flattened.push({
+        ...orderBase,
+        productCode: '',
+        productName: '',
+        quantity: '',
+        paymentMethod: '',
+        total: '',
+      })
+    }
+  })
+
+  return flattened
+}
 </script>
 
 <template>
@@ -148,8 +221,17 @@ const columns: TableColumn<OrderItemDetails>[] = [
           />
 
           <!-- DATE RANGE PICKER -->
-          <HomeDateRangePicker v-model="range" />
+          <HomeDateRangePicker 
+            v-model="range"
+          />
         </div>
+
+        <ExportCsvButton
+          filename="sale-report"
+          :range="range"
+          :headers="['No', 'Order No', 'Sale By', 'Paid', 'Date', 'Product Code', 'Product Name', 'Quantity', 'Payment Method', 'Total']"
+          :fetch-data="fetchExportData"
+        />
       </div>
 
       <!-- TABLE -->
