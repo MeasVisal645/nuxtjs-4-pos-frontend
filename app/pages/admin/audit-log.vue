@@ -77,8 +77,7 @@ const columns: TableColumn<AuditLog>[] = [
       )
     }
   },
-  { accessorKey: 'path', header: 'Path' },
-  { accessorKey: 'param', header: 'Param' },
+  { accessorKey: 'param', header: 'Path & Param' },
   { accessorKey: 'ipAddress', header: 'Ip Address' },
   { accessorKey: 'userAgent', header: 'User Agent' },
   {

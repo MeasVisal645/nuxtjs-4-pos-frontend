@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { h, resolveComponent, ref, computed } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { upperFirst } from 'scule'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
+import type { Row } from '@tanstack/table-core'
 import type { Customer } from '~/types'
 
 const {
@@ -12,52 +12,28 @@ const {
   pageNumber,
   pageSize,
   totalRecords,
+  search: customerSearch,
+  deleteById
 } = useCustomer()
 
-const toast = useToast()
+const search = computed({
+  get: () => customerSearch.value,
+  set: (v: string) => {
+    customerSearch.value = v
+    pageNumber.value = 1
+  }
+})
 
-
-const selectedCustomer = ref<Customer | null>(null)
-const viewModalOpen = ref(false)
 const editModalOpen = ref(false)
 const selectedId = ref<string | number | null>(null)
 
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
 
-const table = useTemplateRef('table')
-
-const columnFilters = ref<any[]>([])
-const columnVisibility = ref<Record<string, boolean>>({
-  active: false
-})
-const rowSelection = ref<Record<string, boolean>>({})
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
-
 function getRowItems(row: Row<Customer>) {
   return [
-    {
-      type: 'label',
-      label: 'Actions'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'View Customer Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedCustomer.value = row.original
-        viewModalOpen.value = true     
-      }
-    },
-    {
-      type: 'separator'
-    },
+    { type: 'label', label: 'Actions' },
+    { type: 'separator' },
     {
       label: 'Edit Customer',
       icon: 'i-lucide-pencil',
@@ -66,18 +42,13 @@ function getRowItems(row: Row<Customer>) {
         editModalOpen.value = true
       }
     },
-    {
-      type: 'separator'
-    },
+    { type: 'separator' },
     {
       label: 'Delete Customer',
       icon: 'i-lucide-trash',
       color: 'error',
       onSelect() {
-        toast.add({
-          title: 'Customer deleted',
-          description: 'The customer has been deleted.'
-        })
+        deleteById(Number(row.original.id))
       }
     }
   ]
@@ -97,67 +68,24 @@ const columns: TableColumn<Customer>[] = [
   { accessorKey: 'address', header: 'Address' },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      return h(
+    cell: ({ row }) =>
+      h(
         'div',
         { class: 'text-right' },
-        h(
-          UDropdownMenu,
-          {
-            content: {
-              align: 'end'
-            },
-            items: getRowItems(row)
-          },
-          () =>
-            h(UButton, {
-              icon: 'i-lucide-ellipsis-vertical',
-              color: 'neutral',
-              variant: 'ghost',
-              class: 'ml-auto'
-            })
+        h(UDropdownMenu, {
+          content: { align: 'end' },
+          items: getRowItems(row)
+        }, () =>
+          h(UButton, {
+            icon: 'i-lucide-ellipsis-vertical',
+            color: 'neutral',
+            variant: 'ghost',
+            class: 'ml-auto'
+          })
         )
       )
-    }
   }
 ]
-
-const filter = ref< 'true' | 'false' | 'all'>('true')
-
-watch(
-  () => table.value?.tableApi,
-  (api) => {
-    if (!api) return
-    api.getColumn('active')?.setFilterValue(true)
-  },
-  { immediate: true }
-)
-
-watch(filter, (newVal) => {
-  const api = table.value?.tableApi
-  if (!api) return
-
-  const col = api.getColumn('active')
-  if (!col) return
-
-  if (newVal === 'all') {
-    col.setFilterValue(undefined)
-  } else if (newVal === 'true') {
-    col.setFilterValue(true)
-  } else if (newVal === 'false') {
-    col.setFilterValue(false)
-  }
-})
-
-
-const code = computed({
-  get: (): string => {
-    return (table.value?.tableApi?.getColumn('code')?.getFilterValue() as string) || ''
-  },
-  set: (value: string) => {
-    table.value?.tableApi?.getColumn('code')?.setFilterValue(value || undefined)
-  }
-})
 </script>
 
 <template>
@@ -167,7 +95,6 @@ const code = computed({
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
         <template #right>
           <CustomerAddModal @submitted="fetchPagination" />
         </template>
@@ -175,6 +102,7 @@ const code = computed({
     </template>
 
     <template #body>
+      <!-- ERROR -->
       <div v-if="loadError" class="mb-3">
         <UAlert
           color="error"
@@ -183,58 +111,18 @@ const code = computed({
         />
       </div>
 
+      <!-- FILTERS -->
       <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <UInput
-            v-model="code"
-            class="max-w-sm"
-            icon="i-lucide-search"
-            placeholder="Search..."
-          />
-        </div>
-        <div class="gap-2 flex">
-          <USelect
-            v-model="filter"
-            :items="[
-              { label: 'All', value: 'all' },
-              { label: 'Active', value: 'true' },
-              { label: 'Inactive', value: 'false' }
-            ]"
-            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="Filter status"
-            class="min-w-28"
-          />
-          <UDropdownMenu
-            :items="
-              table?.tableApi
-                ?.getAllColumns()
-                .filter((column: any) => column.getCanHide())
-                .map((column: any) => ({
-                  label: upperFirst(column.id),
-                  type: 'checkbox' as const,
-                  checked: column.getIsVisible(),
-                  onUpdateChecked(checked: boolean) {
-                    table?.tableApi?.getColumn(column.id)?.toggleVisibility(!!checked)
-                  },
-                  onSelect(e?: Event) {
-                    e?.preventDefault()
-                  }
-                }))
-            "
-            :content="{ align: 'end' }"
-          >
-            <UButton label="Display" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
-          </UDropdownMenu>
-        </div>
+        <UInput
+          v-model="search"
+          class="max-w-sm"
+          icon="i-lucide-search"
+          placeholder="Search..."
+        />
       </div>
 
+      <!-- TABLE -->
       <UTable
-        ref="table"
-        v-model:column-filters="columnFilters"
-        v-model:column-visibility="columnVisibility"
-        v-model:row-selection="rowSelection"
-        v-model:pagination="pagination"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
         :data="customers"
         :columns="columns"
@@ -249,22 +137,24 @@ const code = computed({
         }"
       />
 
+      <!-- EDIT MODAL -->
       <CustomerEditModal
         v-model:open="editModalOpen"
         :id="selectedId"
         @submitted="fetchPagination"
       />
 
+      <!-- PAGINATION -->
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
           {{ totalRecords }} total record(s)
         </div>
 
         <UPagination
-          :default-page="pageNumber"
+          :page="pageNumber"
           :items-per-page="pageSize"
           :total="totalRecords"
-          @update:page="(p:number) => pageNumber = p"
+          @update:page="(p: number) => (pageNumber = p)"
         />
       </div>
     </template>

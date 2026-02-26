@@ -1,55 +1,79 @@
-import type { PageResponse, Product } from "~/types";
+import { ref, watch, onMounted } from 'vue'
+import type { PageResponse, Product } from "~/types"
 
 export function useProduct() {
-  const showModal = ref(false);
-  const isEditOpen = ref(false);
-  const modalMode = ref<"view" | "edit">("view");
+  // ---------- DATA ----------
+  const products = ref<Product[]>([])
+  const pending = ref(false)
+  const loadError = ref<any>(null)
 
-  const products = ref<Product[]>([]);
-  const pending = ref(false);
-  const loadError = ref<any>(null);
+  // ---------- PAGINATION ----------
+  const pageNumber = ref(1)
+  const pageSize = ref(10)
+  const totalRecords = ref(0)
+  const totalPages = ref(0)
 
-  /** ===========================
-   * Fetch All Product Pagination
-   * ========================== */
-  const pageNumber = ref(1);
-  const pageSize = ref(10);
-  const totalRecords = ref(0);
-  const totalPages = ref(0);
+  // ---------- SEARCH ----------
+  const search = ref('')
 
+  // ---------- FILTER ----------
+  const isActive = ref<boolean | null>(null)
+
+  // ---------- MODAL ----------
+  const modalOpen = ref(false)
+  const selected = ref<Product | null>(null)
+
+  function openModal(row: Product) {
+    selected.value = row
+    modalOpen.value = true
+  }
+
+  function closeModal() {
+    modalOpen.value = false
+    selected.value = null
+  }
+
+  // ---------- FETCH ----------
   async function fetchPagination() {
     try {
       pending.value = true
       loadError.value = null
 
+      const query = new URLSearchParams({
+        pageNumber: String(pageNumber.value),
+        pageSize: String(pageSize.value),
+      })
+
+      if (search.value.trim()) {
+        query.append('search', search.value.trim())
+      }
+
+      if (isActive.value !== null) {
+        query.append('isActive', String(isActive.value))
+      }
+
       const res = await useApi<PageResponse<Product>>(
-        `/product?pageNumber=${pageNumber.value}`
+        `/product?${query.toString()}`
       )
 
       products.value = res.content ?? []
       totalRecords.value = res.totalRecords ?? 0
       totalPages.value = res.totalPages ?? 0
-
-      // keep in sync (optional but good)
       pageNumber.value = res.pageNumber ?? pageNumber.value
       pageSize.value = res.pageSize ?? pageSize.value
+
     } catch (e) {
       loadError.value = e
       products.value = []
       totalRecords.value = 0
       totalPages.value = 0
+      console.error('category fetch error:', e)
     } finally {
       pending.value = false
     }
   }
 
-
-  onMounted(fetchPagination);
-  watch([pageNumber, pageSize], fetchPagination);
-
-  /** ===========================
-  * Delete By Id
-  * ========================== */
+  // ---------- DELETE ----------
   async function deleteById(id: number) {
     try {
       pending.value = true;
@@ -65,27 +89,27 @@ export function useProduct() {
     }
   }
 
-  /** ===========================
-   * RETURN EVERYTHING
-   * ========================== */
-  return {
-    // data
-    products,
+  // ---------- INITIAL LOAD ----------
+  onMounted(fetchPagination)
 
-    // state
-    showModal,
-    isEditOpen,
-    modalMode,
+  // ---------- WATCHERS ----------
+  watch([pageNumber, pageSize, search, isActive], fetchPagination)
+
+  return {
+    products,
     pageNumber,
     pageSize,
     totalRecords,
     totalPages,
-
-    // actions
     pending,
     loadError,
+    modalOpen,
+    selected,
+    openModal,
+    closeModal,
+    search,
+    isActive,
     fetchPagination,
-    deleteById,
-
-  };
+    deleteById
+  }
 }
