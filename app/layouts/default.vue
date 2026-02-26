@@ -79,7 +79,14 @@ const links = [[{
   onSelect: () => {
       open.value = false
     }
-  },  {
+  }, {
+  label: 'Expense',
+  icon: 'i-lucide-banknote-arrow-down',
+  to: '/expense',
+  onSelect: () => {
+      open.value = false
+    }
+  }, {
     label: 'Reports',
     to: '/report',
     icon: 'i-lucide-book-text',

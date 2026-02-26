@@ -33,7 +33,6 @@ export function useSaleReport(
       pending.value = true
       loadError.value = null
 
-      // 🔥 Build query dynamically
       const query = new URLSearchParams({
         pageNumber: String(pageNumber.value),
         pageSize: String(pageSize.value),
@@ -73,18 +72,15 @@ export function useSaleReport(
     }
   }
 
-  // Initial load
   onMounted(fetchPagination)
 
-  // Pagination change
   watch([pageNumber, pageSize], fetchPagination)
 
-  // 🔥 Date / Period change
   if (period && range) {
     watch(
       [period, range],
       () => {
-        pageNumber.value = 1 // reset page
+        pageNumber.value = 1 
         fetchPagination()
       },
       { deep: true }
