@@ -23,7 +23,6 @@ const selectedId = ref<string | number | null>(null)
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
 
 const table = useTemplateRef('table')
 
@@ -71,30 +70,10 @@ function getRowItems(row: Row<Category>) {
 
 const columns: TableColumn<Category>[] = [
   {
-    id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        modelValue: table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all'
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        modelValue: row.getIsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-        ariaLabel: 'Select row'
-      })
-  },
-  {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
+    cell: ({ row }) => {
+      return (pageNumber.value - 1) * pageSize.value + row.index + 1
     }
   },
   { accessorKey: 'code', header: 'Code' },
@@ -275,8 +254,7 @@ const code = computed({
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ totalRecords }} row(s) selected.
+          {{ totalRecords }} total record(s)
         </div>
 
         <UPagination

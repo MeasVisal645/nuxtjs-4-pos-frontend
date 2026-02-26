@@ -20,7 +20,6 @@ const rangeRef = toRef(props, 'range')
 const {
   orderItems,
   pending,
-  totalRecords,
 } = useSaleReport(periodRef, rangeRef)
 
 // ---------- LOOKUPS ----------
@@ -42,13 +41,6 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 5
 })
-
-const currentPage = computed(() => pagination.value.pageIndex + 1)
-const totalPages = computed(() => Math.ceil(totalRecords.value / pagination.value.pageSize))
-
-function onPageChange(page: number) {
-  pagination.value.pageIndex = page - 1
-}
 
 // ---------- COLUMNS ----------
 const columns: TableColumn<OrderItemDetails>[] = [

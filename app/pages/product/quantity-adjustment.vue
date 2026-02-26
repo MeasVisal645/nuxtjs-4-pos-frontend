@@ -3,6 +3,9 @@ import type { TableColumn } from '@nuxt/ui'
 import { upperFirst } from 'scule'
 import { getPaginationRowModel } from '@tanstack/table-core'
 import type { QuantityAdjustment } from '~/types'
+import toArray from '~/utils/helper'
+
+type User = { id: number; username: string }
 
 const {
   loadError,
@@ -16,9 +19,21 @@ const {
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 const UDropdownMenu = resolveComponent('UDropdownMenu')
-const UCheckbox = resolveComponent('UCheckbox')
-
 const table = useTemplateRef('table')
+
+// ---------- LOOKUPS ----------
+const users = ref<User[]>([])
+
+async function loadLookups() {
+  const userRes = await useApi('/user/all')
+  users.value = toArray<User>(userRes)
+}
+
+onMounted(loadLookups)
+
+const userNameById = computed<Record<number, string>>(() =>
+  Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
+)
 
 const columnFilters = ref<any[]>([])
 const columnVisibility = ref<Record<string, boolean>>({
@@ -33,34 +48,21 @@ const pagination = ref({
 
 const columns: TableColumn<QuantityAdjustment>[] = [
   {
-    id: 'select',
-    header: ({ table }) =>
-      h(UCheckbox, {
-        modelValue: table.getIsSomePageRowsSelected()
-          ? 'indeterminate'
-          : table.getIsAllPageRowsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
-          table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all'
-      }),
-    cell: ({ row }) =>
-      h(UCheckbox, {
-        modelValue: row.getIsSelected(),
-        'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
-        ariaLabel: 'Select row'
-      })
-  },
-  {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
+    cell: ({ row }) => {
+      return (pageNumber.value - 1) * pageSize.value + row.index + 1
     }
   },
   { accessorKey: 'productName', header: 'Product' },
-  { accessorKey: 'userId', header: 'User Id' },
+  {
+    id: 'user',
+    header: 'By User',
+    cell: ({ row }) => {
+      const id = Number(row.original.userId)
+      return userNameById.value[id] ?? `#${id}`
+    }
+  },
   {
     accessorKey: 'method',
     header: 'Method',
@@ -211,8 +213,7 @@ watch(globalFilter, (value) => {
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ totalRecords }} row(s) selected.
+          {{ totalRecords }} total record(s)
         </div>
 
         <UPagination
