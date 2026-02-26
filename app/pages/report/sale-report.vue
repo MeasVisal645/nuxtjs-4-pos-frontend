@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { h, resolveComponent, ref, computed, watch, onMounted } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/table-core'
 import type { OrderItemDetails, Period, Range } from '~/types'
 import toArray from '~/utils/helper'
 import { sub } from 'date-fns'
@@ -24,9 +23,25 @@ const {
   totalRecords,
   modalOpen,
   selected,
-  openModal
+  openModal,
+  search: reportSearch,
 } = useSaleReport(period, range)
 
+// ---------- SEARCH ----------
+const search = computed({
+  get: () => reportSearch.value,
+  set: (v: string) => {
+    reportSearch.value = v
+    pageNumber.value = 1
+  }
+})
+
+// Reset page when range changes
+watch(range, () => {
+  pageNumber.value = 1
+}, { deep: true })
+
+// ---------- LOOKUPS ----------
 const users = ref<User[]>([])
 
 async function loadLookups() {
@@ -40,29 +55,16 @@ const userNameById = computed<Record<number, string>>(() =>
   Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
 )
 
+// ---------- TABLE ----------
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
-const table = useTemplateRef('table')
-
-const columnFilters = ref<any[]>([])
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
-
-watch(range, () => {
-  pagination.value.pageIndex = 0
-})
 
 const columns: TableColumn<OrderItemDetails>[] = [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
+    cell: ({ row }) => {
+      return (pageNumber.value - 1) * pageSize.value + row.index + 1
     }
   },
   {
@@ -113,15 +115,6 @@ const columns: TableColumn<OrderItemDetails>[] = [
       })
   }
 ]
-
-const search = computed({
-  get: (): string => {
-    return (table.value?.tableApi?.getColumn('orderNo')?.getFilterValue() as string) || ''
-  },
-  set: (value: string) => {
-    table.value?.tableApi?.getColumn('orderNo')?.setFilterValue(value || undefined)
-  }
-})
 </script>
 
 <template>
@@ -154,18 +147,13 @@ const search = computed({
             placeholder="Search order number..."
           />
 
-          <!--  DATE RANGE PICKER -->
+          <!-- DATE RANGE PICKER -->
           <HomeDateRangePicker v-model="range" />
-
         </div>
       </div>
 
       <!-- TABLE -->
       <UTable
-        ref="table"
-        v-model:column-filters="columnFilters"
-        v-model:pagination="pagination"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
         :data="orderItems"
         :columns="columns"
@@ -196,7 +184,7 @@ const search = computed({
           :page="pageNumber"
           :items-per-page="pageSize"
           :total="totalRecords"
-          @update:page="(p:number) => (pageNumber = p)"
+          @update:page="(p: number) => (pageNumber = p)"
         />
       </div>
     </template>

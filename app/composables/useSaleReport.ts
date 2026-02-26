@@ -1,20 +1,26 @@
-import { ref, watch, onMounted, type Ref } from 'vue'
+import { ref, watch, onMounted, shallowRef, type Ref } from 'vue'
 import type { PageResponse, OrderItemDetails, Period, Range } from "~/types"
+import { sub } from 'date-fns'
 
 export function useSaleReport(
   period?: Ref<Period>,
   range?: Ref<Range>
 ) {
+  // ---------- DATA ----------
   const orderItems = ref<OrderItemDetails[]>([])
   const pending = ref(false)
   const loadError = ref<any>(null)
 
+  // ---------- PAGINATION ----------
   const pageNumber = ref(1)
   const pageSize = ref(10)
   const totalRecords = ref(0)
   const totalPages = ref(0)
 
-  // Modal state
+  // ---------- SEARCH ----------
+  const search = ref('')
+
+  // ---------- MODAL ----------
   const modalOpen = ref(false)
   const selected = ref<OrderItemDetails | null>(null)
 
@@ -28,27 +34,36 @@ export function useSaleReport(
     selected.value = null
   }
 
+  // ---------- RANGE ----------
+  const internalRange = range ?? shallowRef<Range>({
+    start: sub(new Date(), { days: 14 }),
+    end: new Date(),
+  })
+
+  // ---------- FETCH ----------
   async function fetchPagination() {
     try {
       pending.value = true
       loadError.value = null
 
-      // 🔥 Build query dynamically
       const query = new URLSearchParams({
         pageNumber: String(pageNumber.value),
         pageSize: String(pageSize.value),
       })
 
-      if (period?.value) {
-        query.append('period', String(period.value))
+      const startDate = internalRange.value?.start
+      const endDate = internalRange.value?.end
+
+      if (startDate) {
+        query.append('startDate', startDate.toISOString().slice(0, 10))
       }
 
-      if (range?.value?.start) {
-        query.append('from', String(range.value.start))
+      if (endDate) {
+        query.append('endDate', endDate.toISOString().slice(0, 10))
       }
 
-      if (range?.value?.end) {
-        query.append('to', String(range.value.end))
+      if (search.value?.trim()) {
+        query.append('search', search.value.trim())
       }
 
       const res = await useApi<PageResponse<OrderItemDetails>>(
@@ -58,7 +73,6 @@ export function useSaleReport(
       orderItems.value = res.content ?? []
       totalRecords.value = res.totalRecords ?? 0
       totalPages.value = res.totalPages ?? 0
-
       pageNumber.value = res.pageNumber ?? pageNumber.value
       pageSize.value = res.pageSize ?? pageSize.value
 
@@ -67,24 +81,23 @@ export function useSaleReport(
       orderItems.value = []
       totalRecords.value = 0
       totalPages.value = 0
-      console.log('orderItem fetch error:', e)
+      console.error('orderItem fetch error:', e)
     } finally {
       pending.value = false
     }
   }
 
-  // Initial load
+  // ---------- INITIAL LOAD ----------
   onMounted(fetchPagination)
 
-  // Pagination change
-  watch([pageNumber, pageSize], fetchPagination)
+  // ---------- WATCHERS ----------
+  watch([pageNumber, pageSize, search, internalRange], fetchPagination, { deep: true })
 
-  // 🔥 Date / Period change
   if (period && range) {
     watch(
       [period, range],
       () => {
-        pageNumber.value = 1 // reset page
+        pageNumber.value = 1
         fetchPagination()
       },
       { deep: true }
@@ -92,26 +105,19 @@ export function useSaleReport(
   }
 
   return {
-    // data
     orderItems,
-
-    // pagination
     pageNumber,
     pageSize,
     totalRecords,
     totalPages,
-
-    // ui state
     pending,
     loadError,
-
-    // modal
     modalOpen,
     selected,
     openModal,
     closeModal,
-
-    // actions
+    search,
+    range: internalRange,
     fetchPagination,
   }
 }
