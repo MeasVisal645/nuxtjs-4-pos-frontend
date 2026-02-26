@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { h, resolveComponent } from 'vue'
+import { h, resolveComponent, toRef } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel } from '@tanstack/vue-table'
-import type { OrderItemDetails, Period, Range,  } from '~/types'
-import toArray from '~/utils/helper';
+import type { OrderItemDetails, Period, Range } from '~/types'
+import toArray from '~/utils/helper'
 
 type User = { id: number; username: string }
 
@@ -14,28 +14,22 @@ const props = defineProps<{
 
 const UBadge = resolveComponent('UBadge')
 
+const periodRef = toRef(props, 'period')
+const rangeRef = toRef(props, 'range')
+
 const {
   orderItems,
-  pending,
-} = useSaleReport()
+  pending
+} = useSaleReport(periodRef, rangeRef)
 
 const users = ref<User[]>([])
 
 async function loadLookups() {
-  const [userRes] = await Promise.all([
-    useApi('/user/all')
-  ])
-
+  const userRes = await useApi('/user/all')
   users.value = toArray<User>(userRes)
 }
 
-onMounted(async () => {
-  try {
-    await loadLookups()
-  } catch (err) {
-    console.error('Failed to load users:', err)
-  }
-})
+onMounted(loadLookups)
 
 const userNameById = computed<Record<number, string>>(() =>
   Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
@@ -56,7 +50,7 @@ const columns: TableColumn<OrderItemDetails>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { id: 'orderNo', header: 'Order No', accessorFn: (r) => r.orderItems.orderNo },
+  { id: 'orderNo', header: 'Order No', accessorFn: r => r.orderItems.orderNo },
   {
     id: 'user',
     header: 'Sale By',
@@ -92,7 +86,6 @@ const columns: TableColumn<OrderItemDetails>[] = [
 
 <template>
   <UTable
-    ref="table"
     class="w-full shrink-0"
     v-model:pagination="pagination"
     :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"

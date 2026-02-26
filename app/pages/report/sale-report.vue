@@ -1,10 +1,19 @@
 <script setup lang="ts">
+import { h, resolveComponent, ref, computed, watch, onMounted } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel, type Row } from '@tanstack/table-core'
-import type { OrderItems, OrderItemDetails } from '~/types'
+import { getPaginationRowModel } from '@tanstack/table-core'
+import type { OrderItemDetails, Period, Range } from '~/types'
 import toArray from '~/utils/helper'
+import { sub } from 'date-fns'
 
 type User = { id: number; username: string }
+
+const range = ref<Range>({
+  start: sub(new Date(), { days: 14 }),
+  end: new Date()
+})
+
+const period = ref<Period>('daily')
 
 const {
   loadError,
@@ -16,38 +25,23 @@ const {
   modalOpen,
   selected,
   openModal
-} = useSaleReport()
+} = useSaleReport(period, range)
 
 const users = ref<User[]>([])
 
 async function loadLookups() {
-  const [userRes] = await Promise.all([
-    useApi('/user/all')
-  ])
-
+  const userRes = await useApi('/user/all')
   users.value = toArray<User>(userRes)
 }
 
-onMounted(async () => {
-  try {
-    await loadLookups()
-  } catch (err) {
-    console.error('Failed to load users:', err)
-  }
-})
+onMounted(loadLookups)
 
 const userNameById = computed<Record<number, string>>(() =>
   Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
 )
 
-const toast = useToast()
-
-const selectedOrderItem = ref<OrderItems | null>(null)
-const viewModalOpen = ref(false)
-
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
-
 const table = useTemplateRef('table')
 
 const columnFilters = ref<any[]>([])
@@ -57,31 +51,9 @@ const pagination = ref({
   pageSize: 10
 })
 
-function getRowItems(row: Row<OrderItemDetails>) {
-  return [
-    { type: 'label', label: 'Actions' },
-    { type: 'separator' },
-    {
-      label: 'View Order Details',
-      icon: 'i-lucide-list',
-      onSelect() {
-        selectedOrderItem.value = row.original.orderItems
-        viewModalOpen.value = true
-      }
-    },
-    {
-      label: 'Delete Order',
-      icon: 'i-lucide-trash',
-      color: 'error',
-      onSelect() {
-        toast.add({
-          title: 'Order deleted',
-          description: 'The order has been deleted.'
-        })
-      }
-    }
-  ]
-}
+watch(range, () => {
+  pagination.value.pageIndex = 0
+})
 
 const columns: TableColumn<OrderItemDetails>[] = [
   {
@@ -93,7 +65,11 @@ const columns: TableColumn<OrderItemDetails>[] = [
       return pageIndex * pageSize + row.index + 1
     }
   },
-  { id: 'orderNo', header: 'Order No', accessorFn: (r) => r.orderItems.orderNo },
+  {
+    id: 'orderNo',
+    header: 'Order No',
+    accessorFn: (r) => r.orderItems.orderNo
+  },
   {
     id: 'user',
     header: 'Sale By',
@@ -121,27 +97,23 @@ const columns: TableColumn<OrderItemDetails>[] = [
     header: 'Date (dd/mm/yyyy)',
     cell: ({ row }) => {
       const d = new Date(row.original.orderItems.createdDate)
-      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}  ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     }
   },
   {
     id: 'details',
     header: 'Details',
-    cell: ({ row }) => {
-      const count = row.original.orderDetails
-      return h(UButton, {
-        label: `View`,
+    cell: ({ row }) =>
+      h(UButton, {
+        label: 'View',
         size: 'xs',
         color: 'primary',
         variant: 'soft',
         onClick: () => openModal(row.original)
       })
-    }
   }
-
 ]
 
-// Search
 const search = computed({
   get: (): string => {
     return (table.value?.tableApi?.getColumn('orderNo')?.getFilterValue() as string) || ''
@@ -150,19 +122,6 @@ const search = computed({
     table.value?.tableApi?.getColumn('orderNo')?.setFilterValue(value || undefined)
   }
 })
-
-// ---------- Date Range Filter ----------
-import { CalendarDate } from '@internationalized/date'
-
-const dateRange = shallowRef<{ start: CalendarDate | undefined; end: CalendarDate | undefined }>({
-  start: undefined,
-  end: undefined
-})
-
-function clearDateFilter() {
-  dateRange.value = { start: undefined, end: undefined }
-  pagination.value.pageIndex = 0
-}
 </script>
 
 <template>
@@ -176,53 +135,32 @@ function clearDateFilter() {
     </template>
 
     <template #body>
+      <!-- ERROR -->
       <div v-if="loadError" class="mb-3">
         <UAlert
           color="error"
-          title="Failed to load suppliers"
+          title="Failed to load sale report"
           :description="loadError?.data?.message || loadError?.message || 'Unknown error'"
         />
       </div>
 
-      <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-        <div class="flex flex-wrap items-center gap-1.5">
+      <!-- FILTERS -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex flex-wrap items-center gap-2">
           <UInput
             v-model="search"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Search..."
+            placeholder="Search order number..."
           />
-          <!-- Date range picker -->
-          <!-- <UPopover>
-            <UButton color="neutral" variant="outline" icon="i-lucide-calendar">
-              <template v-if="dateRange.start">
-                <template v-if="dateRange.end">
-                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }} - {{ df.format(dateRange.end.toDate(getLocalTimeZone())) }}
-                </template>
-                <template v-else>
-                  {{ df.format(dateRange.start.toDate(getLocalTimeZone())) }}
-                </template>
-              </template>
-              <template v-else>
-                Date Range
-              </template>
-            </UButton>
-            <template #content>
-              <UCalendar v-model="dateRange" class="p-2" :number-of-months="2" range />
-            </template>
-          </UPopover> -->
 
-          <UButton
-            v-if="dateRange.start || dateRange.end"
-            icon="i-lucide-x"
-            color="neutral"
-            variant="outline"
-            size="sm"
-            @click="clearDateFilter"
-          />
+          <!--  DATE RANGE PICKER -->
+          <HomeDateRangePicker v-model="range" />
+
         </div>
       </div>
 
+      <!-- TABLE -->
       <UTable
         ref="table"
         v-model:column-filters="columnFilters"
@@ -242,23 +180,24 @@ function clearDateFilter() {
         }"
       />
 
+      <!-- MODAL -->
       <SalesViewModal
         v-model:open="modalOpen"
         :data="selected"
       />
 
+      <!-- PAGINATION -->
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ totalRecords }} row(s) selected.
+          {{ totalRecords }} total record(s)
         </div>
 
-      <UPagination
-        :default-page="pageNumber"
-        :items-per-page="pageSize"
-        :total="totalRecords"
-        @update:page="(p:number) => (pageNumber = p)"
-      />
+        <UPagination
+          :page="pageNumber"
+          :items-per-page="pageSize"
+          :total="totalRecords"
+          @update:page="(p:number) => (pageNumber = p)"
+        />
       </div>
     </template>
   </UDashboardPanel>
