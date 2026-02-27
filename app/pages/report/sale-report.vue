@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { h, resolveComponent, ref, computed, watch, onMounted } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/table-core'
 import type { OrderItemDetails, Period, Range } from '~/types'
 import toArray from '~/utils/helper'
 import { sub } from 'date-fns'
 
+type Product = { id: number; name: string; code: string; price: number }
 type User = { id: number; username: string }
 
 const range = ref<Range>({
@@ -24,15 +24,40 @@ const {
   totalRecords,
   modalOpen,
   selected,
-  openModal
+  openModal,
+  search: reportSearch,
 } = useSaleReport(period, range)
 
+// ---------- SEARCH ----------
+const search = computed({
+  get: () => reportSearch.value,
+  set: (v: string) => {
+    reportSearch.value = v
+    pageNumber.value = 1
+  }
+})
+
+// Reset page when range changes
+watch(range, () => {
+  pageNumber.value = 1
+}, { deep: true })
+
+// ---------- LOOKUPS ----------
 const users = ref<User[]>([])
+const products = ref<Product[]>([])
 
 async function loadLookups() {
-  const userRes = await useApi('/user/all')
+  const [userRes, productRes] = await Promise.all([
+    useApi('/user/all'),
+    useApi('/product/all'),
+  ])
   users.value = toArray<User>(userRes)
+  products.value = toArray<Product>(productRes)
 }
+
+const productById = computed<Record<number, Product>>(() =>
+  Object.fromEntries(products.value.map(p => [Number(p.id), p]))
+)
 
 onMounted(loadLookups)
 
@@ -40,29 +65,16 @@ const userNameById = computed<Record<number, string>>(() =>
   Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
 )
 
+// ---------- TABLE ----------
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
-const table = useTemplateRef('table')
-
-const columnFilters = ref<any[]>([])
-
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
-
-watch(range, () => {
-  pagination.value.pageIndex = 0
-})
 
 const columns: TableColumn<OrderItemDetails>[] = [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
+    cell: ({ row }) => {
+      return (pageNumber.value - 1) * pageSize.value + row.index + 1
     }
   },
   {
@@ -114,14 +126,68 @@ const columns: TableColumn<OrderItemDetails>[] = [
   }
 ]
 
-const search = computed({
-  get: (): string => {
-    return (table.value?.tableApi?.getColumn('orderNo')?.getFilterValue() as string) || ''
-  },
-  set: (value: string) => {
-    table.value?.tableApi?.getColumn('orderNo')?.setFilterValue(value || undefined)
+// ---------- FETCH DATA FOR EXPORT ----------
+async function fetchExportData(mode: 'range' | 'all') {
+  const query = new URLSearchParams({
+    pageNumber: '1',
+    pageSize: '999999',
+  })
+
+  if (mode === 'range') {
+    const startDate = range.value?.start
+    const endDate = range.value?.end
+    if (startDate) query.append('startDate', startDate.toISOString().slice(0, 10))
+    if (endDate) query.append('endDate', endDate.toISOString().slice(0, 10))
   }
-})
+
+  if (search.value?.trim()) {
+    query.append('search', search.value.trim())
+  }
+
+  const res = await useApi<{ content: OrderItemDetails[] }>(`/order?${query.toString()}`)
+  const rows = res?.content ?? []
+
+  // ---------- FLATTEN DATA FOR EXPORT ----------
+  const flattened: Record<string, unknown>[] = []
+
+  rows.forEach((item, orderIndex) => {
+    const d = new Date(item.orderItems.createdDate)
+    const date = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+
+    const orderBase = {
+      no: orderIndex + 1,
+      orderNo: item.orderItems.orderNo,
+      saleBy: userNameById.value[item.orderItems.userId] ?? `#${item.orderItems.userId}`,
+      paid: item.orderItems.paid ? 'Paid' : 'Unpaid',
+      date,
+    }
+
+    if (item.orderDetails.length > 0) {
+      item.orderDetails.forEach((detail) => {
+        const product = productById.value[detail.productId]
+        flattened.push({
+          ...orderBase,
+          productCode: product?.code ?? `#${detail.productId}`,
+          productName: product?.name ?? `#${detail.productId}`,
+          quantity: detail.quantity,
+          paymentMethod: detail.paymentMethod,
+          total: detail.total,
+        })
+      })
+    } else {
+      flattened.push({
+        ...orderBase,
+        productCode: '',
+        productName: '',
+        quantity: '',
+        paymentMethod: '',
+        total: '',
+      })
+    }
+  })
+
+  return flattened
+}
 </script>
 
 <template>
@@ -154,18 +220,22 @@ const search = computed({
             placeholder="Search order number..."
           />
 
-          <!--  DATE RANGE PICKER -->
-          <HomeDateRangePicker v-model="range" />
-
+          <!-- DATE RANGE PICKER -->
+          <HomeDateRangePicker 
+            v-model="range"
+          />
         </div>
+
+        <ExportCsvButton
+          filename="pos-sale-report"
+          :range="range"
+          :headers="['No', 'Order No', 'Sale By', 'Paid', 'Date', 'Product Code', 'Product Name', 'Quantity', 'Payment Method', 'Total']"
+          :fetch-data="fetchExportData"
+        />
       </div>
 
       <!-- TABLE -->
       <UTable
-        ref="table"
-        v-model:column-filters="columnFilters"
-        v-model:pagination="pagination"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
         :data="orderItems"
         :columns="columns"
@@ -196,7 +266,7 @@ const search = computed({
           :page="pageNumber"
           :items-per-page="pageSize"
           :total="totalRecords"
-          @update:page="(p:number) => (pageNumber = p)"
+          @update:page="(p: number) => (pageNumber = p)"
         />
       </div>
     </template>

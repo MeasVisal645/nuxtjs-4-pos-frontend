@@ -1,96 +1,115 @@
-import type { PageResponse, Category } from "~/types";
+import { ref, watch, onMounted } from 'vue'
+import type { PageResponse, Category } from "~/types"
 
 export function useCategory() {
-  const toast = useToast();
-  const showModal = ref(false);
-  const isEditOpen = ref(false);
-  const modalMode = ref<"view" | "edit">("view");
+  // ---------- DATA ----------
+  const categories = ref<Category[]>([])
+  const pending = ref(false)
+  const loadError = ref<any>(null)
 
-  const categories = ref<Category[]>([]);
-  const pending = ref(false);
-  const loadError = ref<any>(null);
+  // ---------- PAGINATION ----------
+  const pageNumber = ref(1)
+  const pageSize = ref(10)
+  const totalRecords = ref(0)
+  const totalPages = ref(0)
 
-  /** ===========================
-   * Fetch All Product Pagination
-   * ========================== */
-  const pageNumber = ref(1);
-  const pageSize = ref(10);
-  const totalRecords = ref(0);
-  const totalPages = ref(0);
+  // ---------- SEARCH ----------
+  const search = ref('')
 
+  // ---------- FILTER ----------
+  const isActive = ref<boolean | null>(null)
+
+  // ---------- MODAL ----------
+  const modalOpen = ref(false)
+  const selected = ref<Category | null>(null)
+
+  function openModal(row: Category) {
+    selected.value = row
+    modalOpen.value = true
+  }
+
+  function closeModal() {
+    modalOpen.value = false
+    selected.value = null
+  }
+
+  // ---------- FETCH ----------
   async function fetchPagination() {
     try {
-      pending.value = true;
-      loadError.value = null;
+      pending.value = true
+      loadError.value = null
+
+      const query = new URLSearchParams({
+        pageNumber: String(pageNumber.value),
+        pageSize: String(pageSize.value),
+      })
+
+      if (search.value.trim()) {
+        query.append('search', search.value.trim())
+      }
+
+      if (isActive.value !== null) {
+        query.append('isActive', String(isActive.value))
+      }
 
       const res = await useApi<PageResponse<Category>>(
-        `/category?pageNumber=${pageNumber.value}`,
-      );
+        `/category?${query.toString()}`
+      )
 
-      categories.value = res.content;
-      totalRecords.value = res.totalRecords;
-      totalPages.value = res.totalPages;
+      categories.value = res.content ?? []
+      totalRecords.value = res.totalRecords ?? 0
+      totalPages.value = res.totalPages ?? 0
+      pageNumber.value = res.pageNumber ?? pageNumber.value
+      pageSize.value = res.pageSize ?? pageSize.value
+
     } catch (e) {
-      loadError.value = e;
-      categories.value = [];
+      loadError.value = e
+      categories.value = []
+      totalRecords.value = 0
+      totalPages.value = 0
+      console.error('category fetch error:', e)
     } finally {
-      pending.value = false;
+      pending.value = false
     }
   }
 
-  onMounted(fetchPagination);
-  watch([pageNumber, pageSize], fetchPagination);
-
-  /** ===========================
-  * Delete By Id
-  * ========================== */
+  // ---------- DELETE ----------
   async function deleteById(id: number) {
     try {
       pending.value = true;
       loadError.value = null;
-
-      await useApi(`/category/delete?id=${id}`, {
+      await useApi(`/customer/delete?id=${id}`, {
         method: "DELETE",
       });
-
-      toast.add({
-        title: "Category Deleted",
-        description: `Category with id ${id} has been deleted successfully.`,
-        color: "success",
-      })
-
       await fetchPagination();
-
     } catch (e) {
-
-      toast.add({
-        title: "Failed to Delete Category",
-        description: `Something went wrong.`,
-        color: "error",
-      })
-
       loadError.value = e;
-
     } finally {
       pending.value = false;
     }
   }
 
+  // ---------- INITIAL LOAD ----------
+  onMounted(fetchPagination)
+
+  // ---------- WATCHERS ----------
+  watch([pageNumber, pageSize, search, isActive], fetchPagination)
+
   return {
-    // state
     categories,
-    showModal,
-    isEditOpen,
-    modalMode,
     pageNumber,
     pageSize,
     totalRecords,
     totalPages,
-    deleteById,
-
-    // actions
-    fetchPagination,
     pending,
     loadError,
-  };
+    modalOpen,
+    selected,
+    openModal,
+    closeModal,
+    search,
+    isActive,
+    fetchPagination,
+    deleteById
+  }
 }

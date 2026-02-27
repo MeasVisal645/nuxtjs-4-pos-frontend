@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
+import Error from '~/error.vue';
 
 definePageMeta({
     layout: 'blank'
@@ -22,4 +23,7 @@ useHead({
 </script>
 
 <template>
+  <UApp>
+    <Error :error="error" />
+  </UApp>
 </template>

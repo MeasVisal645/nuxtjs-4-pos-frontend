@@ -205,7 +205,7 @@ const labelStyle = computed(() => ({
     </template>
 
     <template #body>
-      <div class="flex flex-col gap-6 p-4">
+      <div class="flex flex-col gap-6">
 
         <!-- Search -->
         <div class="relative">

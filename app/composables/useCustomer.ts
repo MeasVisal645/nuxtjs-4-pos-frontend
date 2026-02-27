@@ -1,47 +1,57 @@
 import type { PageResponse, Customer } from "~/types";
 
 export function useCustomer() {
-  const showModal = ref(false);
-  const isEditOpen = ref(false);
-  const modalMode = ref<"view" | "edit">("view");
-
   const customers = ref<Customer[]>([]);
   const pending = ref(false);
   const loadError = ref<any>(null);
-  /** ===========================
-   * Fetch All Customer Pagination
-   * ========================== */
+
+  // ---------- PAGINATION ----------
   const pageNumber = ref(1);
   const pageSize = ref(10);
   const totalRecords = ref(0);
   const totalPages = ref(0);
 
+  // ---------- SEARCH ----------
+  const search = ref('');
+
+  // ---------- FETCH ----------
   async function fetchPagination() {
     try {
       pending.value = true;
       loadError.value = null;
 
+      const query = new URLSearchParams({
+        pageNumber: String(pageNumber.value),
+        pageSize: String(pageSize.value),
+      });
+
+      if (search.value.trim()) {
+        query.append('search', search.value.trim());
+      }
+
       const res = await useApi<PageResponse<Customer>>(
-        `/customer?pageNumber=${pageNumber.value}`,
+        `/customer?${query.toString()}`
       );
 
       customers.value = res.content;
       totalRecords.value = res.totalRecords;
       totalPages.value = res.totalPages;
+      pageNumber.value = res.pageNumber ?? pageNumber.value;
+      pageSize.value = res.pageSize ?? pageSize.value;
     } catch (e) {
       loadError.value = e;
       customers.value = [];
+      totalRecords.value = 0;
+      totalPages.value = 0;
     } finally {
       pending.value = false;
     }
   }
 
   onMounted(fetchPagination);
-  watch([pageNumber, pageSize], fetchPagination);
+  watch([pageNumber, pageSize, search], fetchPagination);
 
-  /** ===========================
-  * Delete By Id
-  * ========================== */
+  // ---------- DELETE ----------
   async function deleteById(id: number) {
     try {
       pending.value = true;
@@ -57,21 +67,13 @@ export function useCustomer() {
     }
   }
 
-  /** ===========================
-   * RETURN EVERYTHING
-   * ========================== */
   return {
-    // state
     customers,
-    showModal,
-    isEditOpen,
-    modalMode,
     pageNumber,
     pageSize,
     totalRecords,
     totalPages,
-
-    // actions
+    search,
     fetchPagination,
     deleteById,
     pending,

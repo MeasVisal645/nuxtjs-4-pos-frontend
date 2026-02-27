@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { h, resolveComponent, ref, computed, onMounted } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/table-core'
 import type { AuditLog } from '~/types'
+import toArray from '~/utils/helper'
+
+type User = { id: number; username: string }
 
 const {
   loadError,
@@ -14,30 +17,41 @@ const {
 
 const UBadge = resolveComponent('UBadge')
 
-const table = useTemplateRef('table')
-
-const columnFilters = ref<any[]>([])
 const columnVisibility = ref<Record<string, boolean>>({
   userAgent: false
 })
-const rowSelection = ref<Record<string, boolean>>({})
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
+// ---------- LOOKUPS ----------
+const users = ref<User[]>([])
 
+async function loadLookups() {
+  const userRes = await useApi('/user/all')
+  users.value = toArray<User>(userRes)
+}
+
+onMounted(loadLookups)
+
+const userNameById = computed<Record<number, string>>(() =>
+  Object.fromEntries(users.value.map(u => [Number(u.id), u.username]))
+)
+
+// ---------- COLUMNS ----------
 const columns: TableColumn<AuditLog>[] = [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row, table }) => {
-      const pageIndex = table.getState().pagination.pageIndex
-      const pageSize = table.getState().pagination.pageSize
-      return pageIndex * pageSize + row.index + 1
+    cell: ({ row }) => {
+      return (pageNumber.value - 1) * pageSize.value + row.index + 1
     }
   },
-  { accessorKey: 'userId', header: 'User' },
+  {
+    id: 'user',
+    header: 'User',
+    cell: ({ row }) => {
+      const id = row.original.userId
+      return userNameById.value[id] ?? `#${id}`
+    }
+  },
   {
     accessorKey: 'method',
     header: 'Method',
@@ -52,7 +66,7 @@ const columns: TableColumn<AuditLog>[] = [
       return h(
         UBadge,
         {
-          color: colorMap[row.original.method] || 'neutral',
+          color: colorMap[row.original.method] ?? 'neutral',
           variant: 'soft',
           ui: {
             rounded: 'rounded-full',
@@ -63,8 +77,7 @@ const columns: TableColumn<AuditLog>[] = [
       )
     }
   },
-  { accessorKey: 'path', header: 'Path' },
-  { accessorKey: 'param', header: 'Param' },
+  { accessorKey: 'param', header: 'Path & Param' },
   { accessorKey: 'ipAddress', header: 'Ip Address' },
   { accessorKey: 'userAgent', header: 'User Agent' },
   {
@@ -75,7 +88,6 @@ const columns: TableColumn<AuditLog>[] = [
       return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
     }
   }
-
 ]
 </script>
 
@@ -86,13 +98,12 @@ const columns: TableColumn<AuditLog>[] = [
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
-        <template #right>
-        </template>
+        <template #right />
       </UDashboardNavbar>
     </template>
 
     <template #body>
+      <!-- ERROR -->
       <div v-if="loadError" class="mb-3">
         <UAlert
           color="error"
@@ -100,13 +111,10 @@ const columns: TableColumn<AuditLog>[] = [
           :description="loadError?.data?.message || loadError?.message || 'Unknown error'"
         />
       </div>
+
+      <!-- TABLE -->
       <UTable
-        ref="table"
-        v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
-        v-model:row-selection="rowSelection"
-        v-model:pagination="pagination"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
         :data="auditLog"
         :columns="columns"
@@ -121,17 +129,17 @@ const columns: TableColumn<AuditLog>[] = [
         }"
       />
 
+      <!-- PAGINATION -->
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ totalRecords }} row(s) selected.
+          {{ totalRecords }} total record(s)
         </div>
 
         <UPagination
-          :default-page="pageNumber"
+          :page="pageNumber"
           :items-per-page="pageSize"
           :total="totalRecords"
-          @update:page="(p:number) => pageNumber = p"
+          @update:page="(p: number) => (pageNumber = p)"
         />
       </div>
     </template>

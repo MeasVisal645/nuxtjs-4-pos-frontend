@@ -211,7 +211,7 @@ async function submitAdjustments() {
             <div>
               <div class="font-semibold">Adjustment Items</div>
               <div class="text-sm text-muted">
-                Fill in the information below. Fields marked with * are required.
+                Here you can Add or Substract product quantity.
               </div>
             </div>
             <UButton
