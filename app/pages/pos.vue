@@ -494,7 +494,6 @@ function handlePrint() {
               <div class="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-md p-1 shadow-sm">
                 <UButton icon="i-lucide-minus" color="info" variant="ghost" size="xs" @click.stop="updateQuantity(idx, -1)" />
                 <span class="w-6 text-center text-xs font-bold">{{ item.quantity }}</span>
-                 <UInputNumber v-model="item.quantity" class="w-10 h-6 text-center" :min="1" :max="Number(item.quantity ?? 0)" @click.stop />
                 <UButton icon="i-lucide-plus" color="info" variant="ghost" size="xs" :disabled="item.quantity >= Number(item.product.quantity ?? 0)" @click.stop="updateQuantity(idx, 1)" />
               </div>
             </div>

@@ -217,7 +217,7 @@ async function fetchExportData(mode: 'range' | 'all') {
             v-model="search"
             class="max-w-sm"
             icon="i-lucide-search"
-            placeholder="Search order number..."
+            placeholder="Search..."
           />
 
           <!-- DATE RANGE PICKER -->
