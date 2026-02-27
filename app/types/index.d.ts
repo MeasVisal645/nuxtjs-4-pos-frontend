@@ -199,3 +199,13 @@ export interface OrderItemDetails {
 }
 
 export type paymentMethod = "CASH" | "KHQR";
+
+export interface Expenses {
+  id: number;
+  reference: string;
+  category: string;
+  note: string
+  amount: number
+  userId: number
+  createdDate: string
+}
