@@ -540,7 +540,7 @@ function handlePrint() {
         <div class="p-6">
           <div class="text-center mb-8">
             <div class="text-gray-500 uppercase text-xs font-bold tracking-widest">Total Amount</div>
-            <div class="text-5xl font-black text-primary-600 mt-1">{{ KHR(totalKHR) }}</div>
+            <div class="text-5xl font-black text-primary-600 mt-1">{{ KHR(subtotalKHR) }}</div>
             <div class="text-sm text-gray-500 mt-2">
               Customer: <span class="font-semibold">{{ selectedCustomerName }}</span>
             </div>

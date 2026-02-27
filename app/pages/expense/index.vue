@@ -229,6 +229,8 @@ async function fetchExportData(mode: 'range' | 'all') {
           <HomeDateRangePicker 
             v-model="range"
           />
+
+          <!-- <HomePeriodSelect /> -->
         </div>
 
         <ExportCsvButton
