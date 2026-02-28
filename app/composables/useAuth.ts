@@ -18,7 +18,7 @@ export const useAuth = () => {
       credentials: "include",
     })
 
-    if (!res?.accessToken) throw new Error("Invalid login response: missing accessToken")
+    if (!res?.accessToken) throw new Error("Invalid login response: missing token")
 
     token.value = res.accessToken
   }
