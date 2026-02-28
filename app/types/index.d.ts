@@ -209,3 +209,28 @@ export interface Expenses {
   userId: number
   createdDate: string
 }
+
+export interface PurchaseOrder { 
+  id: number;
+  supplierId: number;
+  orderDate: string;
+  status: Status;
+  createdDate: string;
+  updatedDate: string;
+}
+
+export interface PurchaseOrderDetail {
+  id: number;
+  purchaseId: number;
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface PurchaseOrderDetails {
+  purchaseOrder: PurchaseOrder;
+  purchaseOrderDetail: PurchaseOrderDetail[];
+}
+
+export type Status = "PENDING" | "ORDERED" | "RECEIVED";

@@ -80,6 +80,13 @@ const links = [[{
       open.value = false
     }
   }, {
+  label: 'Purchase',
+  icon: 'i-lucide-chart-column-increasing',
+  to: '/purchase',
+  onSelect: () => {
+      open.value = false
+    }
+  }, {
   label: 'Expense',
   icon: 'i-lucide-banknote-arrow-down',
   to: '/expense',
